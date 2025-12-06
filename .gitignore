@@ -1,9 +1,15 @@
-# Python
+venv/
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+db.sqlite3
+.env
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -19,33 +25,3 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Virtual Environment
-venv/
-env/
-ENV/
-.venv
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-/media
-/staticfiles
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment variables
-.env
-.env.local
-

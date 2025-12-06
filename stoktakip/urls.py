@@ -1,5 +1,5 @@
 """
-URL configuration for stokyonetim project.
+URL configuration for stoktakip project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -15,8 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import TemplateView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path('admin/', admin.site.urls),
+    path('accounts/', include('accounts.urls')),
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('stok/', include('stok.urls')),
+    path('cari/', include('cari.urls')),
+    path('fatura/', include('fatura.urls')),
+    path('raporlar/', include('raporlar.urls')),
+    path('', TemplateView.as_view(template_name='base.html'), name='home'),
 ]
