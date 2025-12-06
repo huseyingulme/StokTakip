@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ana Sayfa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center mb-5">
+        <h1 class="display-4">StokTakip</h1>
+        <p class="lead">Modern ve Kullanıcı Dostu Stok Yönetim Sistemi</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card text-white">
+            <div class="card-body">
+                <i class="bi bi-box-seam fs-1 mb-2"></i>
+                <h3>Stok</h3>
+                <p>Ürün yönetimi ve stok takibi</p>
+                <a href="{% url 'stok:index' %}" class="btn btn-light btn-sm">Göster</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card success text-white">
+            <div class="card-body">
+                <i class="bi bi-people fs-1 mb-2"></i>
+                <h3>Cariler</h3>
+                <p>Müşteri ve cari hesap yönetimi</p>
+                <a href="{% url 'cari:index' %}" class="btn btn-light btn-sm">Göster</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card info text-white">
+            <div class="card-body">
+                <i class="bi bi-receipt fs-1 mb-2"></i>
+                <h3>Faturalar</h3>
+                <p>Fatura oluşturma ve yönetimi</p>
+                <a href="{% url 'fatura:index' %}" class="btn btn-light btn-sm">Göster</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card warning text-white">
+            <div class="card-body">
+                <i class="bi bi-speedometer2 fs-1 mb-2"></i>
+                <h3>Raporlar</h3>
+                <p>İstatistikler ve raporlar</p>
+                <a href="{% url 'raporlar:dashboard' %}" class="btn btn-light btn-sm">Göster</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not user.is_authenticated %}
+<div class="row mt-5">
+    <div class="col-md-12 text-center">
+        <div class="alert alert-info">
+            <h4>Hoş Geldiniz!</h4>
+            <p>Sistemi kullanmaya başlamak için giriş yapın.</p>
+            <a href="{% url 'login' %}" class="btn btn-primary">Giriş Yap</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Hızlı Erişim</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Stok İşlemleri</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="{% url 'stok:ekle' %}"><i class="bi bi-plus-circle"></i> Yeni Ürün Ekle</a></li>
+                            <li><a href="{% url 'stok:index' %}"><i class="bi bi-list"></i> Ürün Listesi</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Fatura İşlemleri</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="{% url 'fatura:ekle' %}"><i class="bi bi-plus-circle"></i> Yeni Fatura Oluştur</a></li>
+                            <li><a href="{% url 'fatura:index' %}"><i class="bi bi-list"></i> Fatura Listesi</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

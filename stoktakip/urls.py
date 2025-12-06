@@ -28,5 +28,5 @@ urlpatterns = [
     path('cari/', include('cari.urls')),
     path('fatura/', include('fatura.urls')),
     path('raporlar/', include('raporlar.urls')),
-    path('', TemplateView.as_view(template_name='base.html'), name='home'),
+    path('', TemplateView.as_view(template_name='home.html'), name='home'),
 ]

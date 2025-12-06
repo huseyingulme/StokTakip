@@ -1,3 +1,2 @@
-# StokTakip
+# StokTakip - Stok Yönetim Sistemi
 
-Django tabanlı stok takip sistemi.

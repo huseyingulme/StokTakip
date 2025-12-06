@@ -1,10 +1,231 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Raporlar{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>Raporlar</h1>
-<p>Raporlar modülü ana sayfası — henüz içerik yok.</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row g-4 mb-4">
+    <!-- Stok İstatistikleri -->
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body">
+                <i class="bi bi-box-seam fs-1 mb-2"></i>
+                <h3>{{ toplam_urun_sayisi }}</h3>
+                <p>Toplam Ürün</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card warning text-white">
+            <div class="card-body">
+                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                <h3>{{ dusuk_stoklu_urunler }}</h3>
+                <p>Düşük Stoklu Ürün</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card danger text-white">
+            <div class="card-body">
+                <i class="bi bi-x-circle fs-1 mb-2"></i>
+                <h3>{{ stoksuz_urunler }}</h3>
+                <p>Stoksuz Ürün</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card success text-white">
+            <div class="card-body">
+                <i class="bi bi-currency-dollar fs-1 mb-2"></i>
+                <h3>{{ toplam_stok_degeri|floatformat:0|default:"0" }} ₺</h3>
+                <p>Toplam Stok Değeri</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Müşteri İstatistikleri -->
+    <div class="col-md-3">
+        <div class="card stats-card info text-white">
+            <div class="card-body">
+                <i class="bi bi-people fs-1 mb-2"></i>
+                <h3>{{ toplam_musteri_sayisi }}</h3>
+                <p>Toplam Müşteri</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card text-white" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+            <div class="card-body">
+                <i class="bi bi-person fs-1 mb-2"></i>
+                <h3>{{ bireysel_musteri }}</h3>
+                <p>Bireysel Müşteri</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card info text-white">
+            <div class="card-body">
+                <i class="bi bi-building fs-1 mb-2"></i>
+                <h3>{{ kurumsal_musteri }}</h3>
+                <p>Kurumsal Müşteri</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card success text-white">
+            <div class="card-body">
+                <i class="bi bi-cash-stack fs-1 mb-2"></i>
+                <h3>{{ toplam_alacak|floatformat:2|default:"0" }} ₺</h3>
+                <p>Toplam Alacak</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Fatura İstatistikleri -->
+    <div class="col-md-3">
+        <div class="card stats-card text-white">
+            <div class="card-body">
+                <i class="bi bi-receipt fs-1 mb-2"></i>
+                <h3>{{ toplam_fatura_sayisi }}</h3>
+                <p>Toplam Fatura</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card success text-white">
+            <div class="card-body">
+                <i class="bi bi-calendar-month fs-1 mb-2"></i>
+                <h3>{{ bu_ay_fatura }}</h3>
+                <p>Bu Ay Fatura</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card success text-white">
+            <div class="card-body">
+                <i class="bi bi-cash fs-1 mb-2"></i>
+                <h3>{{ bu_ay_ciro|floatformat:2|default:"0" }} ₺</h3>
+                <p>Bu Ay Ciro</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card warning text-white">
+            <div class="card-body">
+                <i class="bi bi-clock-history fs-1 mb-2"></i>
+                <h3>{{ bekleyen_faturalar }}</h3>
+                <p>Bekleyen Faturalar</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Son Eklenenler -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-box-seam"></i> Son Eklenen Ürünler</h5>
+            </div>
+            <div class="card-body">
+                {% if son_urunler %}
+                <div class="list-group list-group-flush">
+                    {% for urun in son_urunler %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ urun.ad }}</strong><br>
+                                <small class="text-muted">{{ urun.fiyat|floatformat:2 }} ₺</small>
+                            </div>
+                            <span class="badge bg-success">{{ urun.stok_adedi }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Henüz ürün eklenmemiş</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Son Eklenen Müşteriler</h5>
+            </div>
+            <div class="card-body">
+                {% if son_musteriler %}
+                <div class="list-group list-group-flush">
+                    {% for musteri in son_musteriler %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ musteri.ad_soyad }}</strong><br>
+                                <small class="text-muted">{{ musteri.get_tip_display }}</small>
+                            </div>
+                            <span class="badge bg-info">{{ musteri.telefon|default:"-" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Henüz müşteri eklenmemiş</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Son Faturalar</h5>
+            </div>
+            <div class="card-body">
+                {% if son_faturalar %}
+                <div class="list-group list-group-flush">
+                    {% for fatura in son_faturalar %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ fatura.fatura_no }}</strong><br>
+                                <small class="text-muted">{{ fatura.musteri|default:"-" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ fatura.genel_toplam|floatformat:2 }} ₺</span><br>
+                                <small class="text-muted">{{ fatura.fatura_tarihi|date:"d.m.Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Henüz fatura oluşturulmamış</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Müşteri Sil{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Müşteri Sil</h5>
+            </div>
+            <div class="card-body">
+                <p class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Dikkat!</strong> Bu işlem geri alınamaz.
+                </p>
+                
+                <p>Aşağıdaki müşteriyi silmek istediğinizden emin misiniz?</p>
+                
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6>{{ musteri.ad_soyad }}</h6>
+                        <p class="mb-1"><strong>Tip:</strong> {{ musteri.tip }}</p>
+                        <p class="mb-1"><strong>Telefon:</strong> {{ musteri.telefon|default:"-" }}</p>
+                        <p class="mb-0"><strong>Bakiye:</strong> {{ musteri.bakiye|floatformat:2 }} ₺</p>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'cari:index' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Evet, Sil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
