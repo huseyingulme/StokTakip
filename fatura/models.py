@@ -1,5 +1,5 @@
 from django.db import models
-from cari.models import Musteri
+from cari.models import Cari
 from stok.models import Urun
 
 
@@ -16,7 +16,7 @@ class Fatura(models.Model):
     ]
 
     fatura_no = models.CharField(max_length=50, unique=True, verbose_name="Fatura No")
-    musteri = models.ForeignKey(Musteri, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Müşteri")
+    cari = models.ForeignKey(Cari, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cari")
     fatura_tarihi = models.DateField(verbose_name="Fatura Tarihi")
     vade_tarihi = models.DateField(blank=True, null=True, verbose_name="Vade Tarihi")
     toplam_tutar = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Toplam Tutar")

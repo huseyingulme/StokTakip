@@ -10,15 +10,15 @@ class FaturaKalemInline(admin.TabularInline):
 
 @admin.register(Fatura)
 class FaturaAdmin(admin.ModelAdmin):
-    list_display = ['fatura_no', 'musteri', 'fatura_tarihi', 'genel_toplam', 'fatura_tipi', 'durum']
+    list_display = ['fatura_no', 'cari', 'fatura_tarihi', 'genel_toplam', 'fatura_tipi', 'durum']
     list_filter = ['fatura_tipi', 'durum', 'fatura_tarihi']
-    search_fields = ['fatura_no', 'musteri__ad_soyad']
+    search_fields = ['fatura_no', 'cari__ad_soyad']
     list_editable = ['durum']
     readonly_fields = ['olusturma_tarihi', 'guncelleme_tarihi']
     inlines = [FaturaKalemInline]
     fieldsets = (
         ('Fatura Bilgileri', {
-            'fields': ('fatura_no', 'fatura_tarihi', 'vade_tarihi', 'musteri', 'fatura_tipi', 'durum')
+            'fields': ('fatura_no', 'fatura_tarihi', 'vade_tarihi', 'cari', 'fatura_tipi', 'durum')
         }),
         ('Tutar Bilgileri', {
             'fields': ('toplam_tutar', 'kdv_tutari', 'genel_toplam')

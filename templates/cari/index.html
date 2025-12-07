@@ -7,23 +7,30 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> Cari Yönetimi</h2>
     <a href="{% url 'cari:ekle' %}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Yeni Müşteri Ekle
+        <i class="bi bi-plus-circle"></i> Yeni Cari Ekle
     </a>
 </div>
 
-<!-- Arama ve Filtreleme -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
                 <input type="text" name="search" class="form-control"
                     placeholder="Ad, TC/Vergi No veya telefon ile ara..." value="{{ search_query }}">
             </div>
             <div class="col-md-2">
-                <select name="tip" class="form-select">
+                <select name="kategori" class="form-select">
                     <option value="">Tümü</option>
-                    <option value="Bireysel" {% if tip_filter=='Bireysel' %}selected{% endif %}>Bireysel</option>
-                    <option value="Kurumsal" {% if tip_filter=='Kurumsal' %}selected{% endif %}>Kurumsal</option>
+                    <option value="musteri" {% if kategori_filter == 'musteri' %}selected{% endif %}>Müşteri</option>
+                    <option value="tedarikci" {% if kategori_filter == 'tedarikci' %}selected{% endif %}>Tedarikçi</option>
+                    <option value="her_ikisi" {% if kategori_filter == 'her_ikisi' %}selected{% endif %}>Her İkisi</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="bakiye" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="borc" {% if bakiye_filter == 'borc' %}selected{% endif %}>Borcu Olanlar</option>
+                    <option value="alacak" {% if bakiye_filter == 'alacak' %}selected{% endif %}>Alacağı Olanlar</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -35,64 +42,77 @@
     </div>
 </div>
 
-<!-- Müşteri Listesi -->
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">Müşteri Listesi</h5>
+        <h5 class="mb-0">Cari Listesi</h5>
     </div>
     <div class="card-body">
-        {% if musteriler %}
+        {% if cariler %}
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Ad Soyad / Firma</th>
-                        <th>Tip</th>
+                        <th>Kategori</th>
                         <th>TC/Vergi No</th>
                         <th>Telefon</th>
                         <th>E-posta</th>
-                        <th>Şehir</th>
                         <th>Bakiye</th>
+                        <th>Son İşlem</th>
                         <th>İşlemler</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for musteri in musteriler %}
+                    {% for cari in cariler %}
                     <tr>
-                        <td>{{ musteri.id }}</td>
+                        <td>{{ cari.id }}</td>
                         <td>
-                            <strong>{{ musteri.ad_soyad }}</strong>
-                            {% if musteri.unvan %}
-                            <br><small class="text-muted">{{ musteri.unvan }}</small>
+                            <strong>{{ cari.ad_soyad }}</strong>
+                            {% if cari.risk_asimi_var_mi %}
+                            <span class="badge bg-danger ms-2" title="Risk limiti aşıldı!">⚠</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if musteri.tip == 'Kurumsal' %}
-                            <span class="badge bg-info">{{ musteri.tip }}</span>
+                            {% if cari.kategori == 'musteri' %}
+                            <span class="badge bg-primary">Müşteri</span>
+                            {% elif cari.kategori == 'tedarikci' %}
+                            <span class="badge bg-warning">Tedarikçi</span>
                             {% else %}
-                            <span class="badge bg-secondary">{{ musteri.tip }}</span>
+                            <span class="badge bg-info">Her İkisi</span>
+                            {% endif %}
+                            {% if cari.durum == 'pasif' %}
+                            <span class="badge bg-secondary">Pasif</span>
                             {% endif %}
                         </td>
-                        <td>{{ musteri.tc_vkn|default:"-" }}</td>
-                        <td>{{ musteri.telefon|default:"-" }}</td>
-                        <td>{{ musteri.email|default:"-" }}</td>
-                        <td>{{ musteri.sehir|default:"-" }}</td>
+                        <td>{{ cari.tc_vkn|default:"-" }}</td>
+                        <td>{{ cari.telefon|default:"-" }}</td>
+                        <td>{{ cari.email|default:"-" }}</td>
                         <td>
-                            {% if musteri.bakiye > 0 %}
-                            <span class="badge bg-success">{{ musteri.bakiye|floatformat:2 }} ₺</span>
-                            {% elif musteri.bakiye < 0 %} <span class="badge bg-danger">{{ musteri.bakiye|floatformat:2
-                                }} ₺</span>
-                                {% else %}
-                                <span class="badge bg-secondary">0.00 ₺</span>
-                                {% endif %}
+                            {% if cari.bakiye > 0 %}
+                            <span class="badge bg-danger">{{ cari.bakiye|floatformat:2 }} ₺ (Borç)</span>
+                            {% elif cari.bakiye < 0 %}
+                            <span class="badge bg-success">{{ cari.bakiye|abs|floatformat:2 }} ₺ (Alacak)</span>
+                            {% else %}
+                            <span class="badge bg-secondary">0.00 ₺</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cari.son_islem_tarihi %}
+                            {{ cari.son_islem_tarihi|date:"d.m.Y" }}
+                            {% else %}
+                            -
+                            {% endif %}
                         </td>
                         <td class="action-buttons">
-                            <a href="{% url 'cari:duzenle' musteri.pk %}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil"></i> Düzenle
+                            <a href="{% url 'cari:detay' cari.pk %}" class="btn btn-sm btn-info" title="Detay">
+                                <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{% url 'cari:sil' musteri.pk %}" class="btn btn-sm btn-danger">
-                                <i class="bi bi-trash"></i> Sil
+                            <a href="{% url 'cari:duzenle' cari.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'cari:sil' cari.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
                             </a>
                         </td>
                     </tr>
@@ -101,31 +121,30 @@
             </table>
         </div>
 
-        <!-- Sayfalama -->
-        {% if musteriler.has_other_pages %}
+        {% if cariler.has_other_pages %}
         <nav aria-label="Sayfa navigasyonu">
             <ul class="pagination">
-                {% if musteriler.has_previous %}
-                <li class="page-item"><a class="page-link"
-                        href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}">İlk</a>
+                {% if cariler.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if bakiye_filter %}&bakiye={{ bakiye_filter }}{% endif %}">İlk</a>
                 </li>
-                <li class="page-item"><a class="page-link"
-                        href="?page={{ musteriler.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}">Önceki</a>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cariler.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if bakiye_filter %}&bakiye={{ bakiye_filter }}{% endif %}">Önceki</a>
                 </li>
                 {% endif %}
 
                 <li class="page-item active">
                     <span class="page-link">
-                        Sayfa {{ musteriler.number }} / {{ musteriler.paginator.num_pages }}
+                        Sayfa {{ cariler.number }} / {{ cariler.paginator.num_pages }}
                     </span>
                 </li>
 
-                {% if musteriler.has_next %}
-                <li class="page-item"><a class="page-link"
-                        href="?page={{ musteriler.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}">Sonraki</a>
+                {% if cariler.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cariler.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if bakiye_filter %}&bakiye={{ bakiye_filter }}{% endif %}">Sonraki</a>
                 </li>
-                <li class="page-item"><a class="page-link"
-                        href="?page={{ musteriler.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}">Son</a>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cariler.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if bakiye_filter %}&bakiye={{ bakiye_filter }}{% endif %}">Son</a>
                 </li>
                 {% endif %}
             </ul>
@@ -133,10 +152,10 @@
         {% endif %}
 
         {% else %}
-        <div class="empty-state">
-            <i class="bi bi-people"></i>
-            <h4>Henüz müşteri eklenmemiş</h4>
-            <p>İlk müşterinizi eklemek için "Yeni Müşteri Ekle" butonuna tıklayın.</p>
+        <div class="empty-state text-center py-5">
+            <i class="bi bi-people fs-1 text-muted"></i>
+            <h4 class="mt-3">Henüz cari eklenmemiş</h4>
+            <p class="text-muted">İlk carinizi eklemek için "Yeni Cari Ekle" butonuna tıklayın.</p>
         </div>
         {% endif %}
     </div>

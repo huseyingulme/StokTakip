@@ -10,14 +10,14 @@ from .forms import FaturaForm, FaturaKalemForm
 @login_required
 def index(request):
     """Fatura listesi sayfası"""
-    fatura_list = Fatura.objects.all().select_related('musteri').order_by('-fatura_tarihi', '-olusturma_tarihi')
+    fatura_list = Fatura.objects.all().select_related('cari').order_by('-fatura_tarihi', '-olusturma_tarihi')
     
     # Arama
     search_query = request.GET.get('search', '')
     if search_query:
         fatura_list = fatura_list.filter(
             Q(fatura_no__icontains=search_query) |
-            Q(musteri__ad_soyad__icontains=search_query)
+            Q(cari__ad_soyad__icontains=search_query)
         )
     
     # Durum filtresi

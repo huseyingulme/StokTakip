@@ -1,16 +1,16 @@
 from django import forms
 from .models import Fatura, FaturaKalem
-from cari.models import Musteri
+from cari.models import Cari
 from stok.models import Urun
 
 
 class FaturaForm(forms.ModelForm):
     class Meta:
         model = Fatura
-        fields = ['fatura_no', 'musteri', 'fatura_tarihi', 'vade_tarihi', 'fatura_tipi', 'durum', 'aciklama']
+        fields = ['fatura_no', 'cari', 'fatura_tarihi', 'vade_tarihi', 'fatura_tipi', 'durum', 'aciklama']
         widgets = {
             'fatura_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'FAT-2024-001'}),
-            'musteri': forms.Select(attrs={'class': 'form-control'}),
+            'cari': forms.Select(attrs={'class': 'form-control'}),
             'fatura_tarihi': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'vade_tarihi': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'fatura_tipi': forms.Select(attrs={'class': 'form-control'}),
@@ -19,7 +19,7 @@ class FaturaForm(forms.ModelForm):
         }
         labels = {
             'fatura_no': 'Fatura No',
-            'musteri': 'Müşteri',
+            'cari': 'Cari',
             'fatura_tarihi': 'Fatura Tarihi',
             'vade_tarihi': 'Vade Tarihi',
             'fatura_tipi': 'Fatura Tipi',
