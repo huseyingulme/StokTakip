@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Kayıt Ol{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0 text-center"><i class="bi bi-person-plus"></i> Yeni Kullanıcı Kaydı</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>Hata!</strong> Lütfen aşağıdaki hataları düzeltin:
+                        <ul class="mb-0 mt-2">
+                            {% for field in form %}
+                            {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="bi bi-person"></i> Kullanıcı Adı
+                        </label>
+                        <input type="text" class="form-control" id="id_username" name="username" required autofocus
+                            placeholder="Kullanıcı adınızı giriniz" value="{{ form.username.value|default:'' }}">
+                        <small class="form-text text-muted">
+                            Zorunlu. 150 karakter veya daha az. Sadece harf, rakam ve @/./+/-/_ karakterleri.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">
+                            <i class="bi bi-lock"></i> Şifre
+                        </label>
+                        <input type="password" class="form-control" id="id_password1" name="password1" required
+                            placeholder="Şifrenizi giriniz">
+                        <small class="form-text text-muted">
+                            Şifreniz en az 8 karakter olmalıdır.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">
+                            <i class="bi bi-lock-fill"></i> Şifre Tekrar
+                        </label>
+                        <input type="password" class="form-control" id="id_password2" name="password2" required
+                            placeholder="Şifrenizi tekrar giriniz">
+                        <small class="form-text text-muted">
+                            Doğrulama için şifrenizi tekrar girin.
+                        </small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-person-check"></i> Kayıt Ol
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="text-center">
+                    <p class="mb-0">Zaten hesabınız var mı?</p>
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Giriş Yap
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'home' %}" class="text-muted text-decoration-none">
+                <i class="bi bi-arrow-left"></i> Ana Sayfaya Dön
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+
+    .card {
+        border-radius: 15px;
+    }
+</style>
+{% endblock %}
