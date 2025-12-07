@@ -11,20 +11,20 @@ class KategoriAdmin(admin.ModelAdmin):
 
 @admin.register(Urun)
 class UrunAdmin(admin.ModelAdmin):
-    list_display = ['ad', 'kategori', 'barkod', 'fiyat', 'stok_adedi', 'birim', 'olusturma_tarihi']
+    list_display = ['ad', 'kategori', 'barkod', 'fiyat', 'mevcut_stok', 'min_stok_adedi', 'birim', 'olusturma_tarihi']
     list_filter = ['kategori', 'birim', 'olusturma_tarihi']
-    search_fields = ['ad', 'barkod', 'aciklama']
-    list_editable = ['fiyat', 'stok_adedi']
-    readonly_fields = ['olusturma_tarihi', 'guncelleme_tarihi']
+    search_fields = ['ad', 'barkod']
+    list_editable = ['fiyat', 'min_stok_adedi']
+    readonly_fields = ['olusturma_tarihi', 'mevcut_stok']
     fieldsets = (
         ('Ürün Bilgileri', {
-            'fields': ('ad', 'kategori', 'barkod', 'birim', 'aciklama')
+            'fields': ('ad', 'kategori', 'barkod', 'birim')
         }),
         ('Fiyat ve Stok', {
-            'fields': ('fiyat', 'stok_adedi')
+            'fields': ('fiyat', 'min_stok_adedi', 'mevcut_stok')
         }),
         ('Tarihler', {
-            'fields': ('olusturma_tarihi', 'guncelleme_tarihi'),
+            'fields': ('olusturma_tarihi',),
             'classes': ('collapse',)
         }),
     )
@@ -32,16 +32,16 @@ class UrunAdmin(admin.ModelAdmin):
 
 @admin.register(StokHareketi)
 class StokHareketiAdmin(admin.ModelAdmin):
-    list_display = ['urun', 'hareket_tipi', 'miktar', 'kullanici', 'olusturma_tarihi']
-    list_filter = ['hareket_tipi', 'olusturma_tarihi']
+    list_display = ['urun', 'islem_turu', 'miktar', 'olusturan', 'tarih']
+    list_filter = ['islem_turu', 'tarih']
     search_fields = ['urun__ad', 'aciklama']
-    readonly_fields = ['olusturma_tarihi']
+    readonly_fields = ['tarih']
     fieldsets = (
         ('Hareket Bilgileri', {
-            'fields': ('urun', 'hareket_tipi', 'miktar', 'kullanici')
+            'fields': ('urun', 'islem_turu', 'miktar', 'olusturan')
         }),
         ('Diğer', {
-            'fields': ('aciklama', 'olusturma_tarihi')
+            'fields': ('aciklama', 'tarih')
         }),
     )
 
