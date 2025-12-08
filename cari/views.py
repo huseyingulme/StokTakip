@@ -198,7 +198,7 @@ def hareket_listesi(request):
                 fatura_nolari[hareket.belge_no] = fatura.pk
             except Fatura.DoesNotExist:
                 pass
-    
+
     context = {
         'hareketler': hareketler,
         'cariler': Cari.objects.filter(durum='aktif').order_by('ad_soyad'),
