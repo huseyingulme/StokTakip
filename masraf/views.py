@@ -45,6 +45,11 @@ def index(request):
         'masraflar': masraflar,
         'kategoriler': MasrafKategori.objects.all(),
         'toplam_tutar': toplam_tutar,
+        'search_query': search_query,
+        'kategori_filter': kategori_filter,
+        'durum_filter': durum_filter,
+        'tarih_baslangic': tarih_baslangic,
+        'tarih_bitis': tarih_bitis,
     }
     return render(request, 'masraf/index.html', context)
 

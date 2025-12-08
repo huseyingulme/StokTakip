@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Hesap Sil{% endblock %}
+{% block page_title %}Hesap Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Hesap Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu hesabı silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ hesap.ad }}</strong><br>
+            {{ hesap.get_hesap_tipi_display }}<br>
+            <strong>Bakiye: {{ hesap.bakiye|floatformat:2 }} ₺</strong>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'finans:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

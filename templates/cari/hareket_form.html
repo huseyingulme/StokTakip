@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>{{ title }}{% if cari %} - {{ cari.ad_soyad }}{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.cari.label }}</label>
+                    {{ form.cari }}
+                    {% if form.cari.errors %}
+                        <div class="text-danger small">{{ form.cari.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.hareket_turu.label }}</label>
+                    {{ form.hareket_turu }}
+                    {% if form.hareket_turu.errors %}
+                        <div class="text-danger small">{{ form.hareket_turu.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.tutar.label }}</label>
+                    {{ form.tutar }}
+                    {% if form.tutar.errors %}
+                        <div class="text-danger small">{{ form.tutar.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.tarih.label }}</label>
+                    {{ form.tarih }}
+                    {% if form.tarih.errors %}
+                        <div class="text-danger small">{{ form.tarih.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.odeme_yontemi.label }}</label>
+                    {{ form.odeme_yontemi }}
+                    {% if form.odeme_yontemi.errors %}
+                        <div class="text-danger small">{{ form.odeme_yontemi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.belge_no.label }}</label>
+                    {{ form.belge_no }}
+                    {% if form.belge_no.errors %}
+                        <div class="text-danger small">{{ form.belge_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.aciklama.label }}</label>
+                    {{ form.aciklama }}
+                    {% if form.aciklama.errors %}
+                        <div class="text-danger small">{{ form.aciklama.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Kaydet
+                </button>
+                {% if cari %}
+                <a href="{% url 'cari:detay' cari.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+                {% else %}
+                <a href="{% url 'cari:hareket_listesi' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

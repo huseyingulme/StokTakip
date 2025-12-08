@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Not Sil{% endblock %}
+{% block page_title %}Not Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Cari Notu Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu notu silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ notu.baslik }}</strong><br>
+            <small>{{ notu.icerik|truncatewords:20 }}</small>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'cari:detay' notu.cari.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

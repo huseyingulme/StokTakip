@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Finans Hareketi Sil{% endblock %}
+{% block page_title %}Finans Hareketi Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Finans Hareketi Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu finans hareketini silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ hareket.hareket_no }}</strong><br>
+            {{ hareket.get_hareket_tipi_display }} - {{ hareket.hesap.ad }}<br>
+            <strong>{{ hareket.tutar|floatformat:2 }} ₺</strong>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'finans:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

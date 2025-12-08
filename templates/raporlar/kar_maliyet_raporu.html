@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Kar/Maliyet Raporu{% endblock %}
+{% block page_title %}Kar/Maliyet Raporu{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Kar/Maliyet Raporu</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Raporla
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6>Toplam Satış</h6>
+                        <h3>{{ toplam_satis|floatformat:2 }} ₺</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h6>Toplam Alış (Maliyet)</h6>
+                        <h3>{{ toplam_alis|floatformat:2 }} ₺</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6>Brüt Kar</h6>
+                        <h3>{{ kar|floatformat:2 }} ₺</h3>
+                        <small>Kar Oranı: {{ kar_yuzdesi|floatformat:2 }}%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if satis_detay or alis_detay %}
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Satış Detayları</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fatura</th>
+                                <th>Tarih</th>
+                                <th>Ürün</th>
+                                <th>Miktar</th>
+                                <th>Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for satir in satis_detay %}
+                            <tr>
+                                <td>{{ satir.fatura_no }}</td>
+                                <td>{{ satir.tarih|date:"d.m.Y" }}</td>
+                                <td>{{ satir.urun }}</td>
+                                <td>{{ satir.miktar }}</td>
+                                <td>{{ satir.toplam|floatformat:2 }} ₺</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Alış Detayları</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fatura</th>
+                                <th>Tarih</th>
+                                <th>Ürün</th>
+                                <th>Miktar</th>
+                                <th>Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for satir in alis_detay %}
+                            <tr>
+                                <td>{{ satir.fatura_no }}</td>
+                                <td>{{ satir.tarih|date:"d.m.Y" }}</td>
+                                <td>{{ satir.urun }}</td>
+                                <td>{{ satir.miktar }}</td>
+                                <td>{{ satir.toplam|floatformat:2 }} ₺</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-graph-up" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Seçilen tarih aralığında veri bulunamadı</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

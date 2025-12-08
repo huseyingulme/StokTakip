@@ -193,6 +193,10 @@ def hareket_listesi(request):
     context = {
         'hareketler': hareketler,
         'cariler': Cari.objects.filter(durum='aktif').order_by('ad_soyad'),
+        'cari_filter': cari_filter,
+        'hareket_turu_filter': hareket_turu_filter,
+        'tarih_baslangic': tarih_baslangic,
+        'tarih_bitis': tarih_bitis,
     }
     return render(request, 'cari/hareket_listesi.html', context)
 
@@ -292,7 +296,7 @@ def not_duzenle(request, pk):
     else:
         form = CariNotuForm(instance=notu)
 
-    return render(request, 'cari/not_form.html', {'form': form, 'title': 'Not Düzenle', 'notu': notu})
+    return render(request, 'cari/not_form.html', {'form': form, 'title': 'Not Düzenle', 'notu': notu, 'cari': notu.cari})
 
 
 @login_required
@@ -354,6 +358,9 @@ def tahsilat_makbuzu_listesi(request):
     context = {
         'makbuzlar': makbuzlar,
         'cariler': Cari.objects.filter(durum='aktif').order_by('ad_soyad'),
+        'cari_filter': cari_filter,
+        'tarih_baslangic': tarih_baslangic,
+        'tarih_bitis': tarih_bitis,
     }
     return render(request, 'cari/tahsilat_makbuzu_listesi.html', context)
 
@@ -404,5 +411,8 @@ def tediye_makbuzu_listesi(request):
     context = {
         'makbuzlar': makbuzlar,
         'cariler': Cari.objects.filter(durum='aktif').order_by('ad_soyad'),
+        'cari_filter': cari_filter,
+        'tarih_baslangic': tarih_baslangic,
+        'tarih_bitis': tarih_bitis,
     }
     return render(request, 'cari/tediye_makbuzu_listesi.html', context)

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Hareket Sil{% endblock %}
+{% block page_title %}Hareket Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Cari Hareket Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu hareketi silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ hareket.cari.ad_soyad }}</strong><br>
+            {{ hareket.get_hareket_turu_display }} - {{ hareket.tutar|floatformat:2 }} ₺<br>
+            <small>{{ hareket.tarih|date:"d.m.Y H:i" }}</small>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'cari:detay' hareket.cari.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

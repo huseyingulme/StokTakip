@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Masraf Yönetimi{% endblock %}
+{% block page_title %}Masraf Yönetimi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Masraf Yönetimi</h4>
+    <a href="{% url 'masraf:ekle' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Yeni Masraf Ekle
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Masraf no veya açıklama ile ara..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="kategori" class="form-select">
+                        <option value="">Tüm Kategoriler</option>
+                        {% for kat in kategoriler %}
+                        <option value="{{ kat.pk }}" {% if kategori_filter == kat.pk|stringformat:"s" %}selected{% endif %}>{{ kat.ad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="durum" class="form-select">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="odendi" {% if durum_filter == 'odendi' %}selected{% endif %}>Ödendi</option>
+                        <option value="beklemede" {% if durum_filter == 'beklemede' %}selected{% endif %}>Beklemede</option>
+                        <option value="iptal" {% if durum_filter == 'iptal' %}selected{% endif %}>İptal</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}" placeholder="Başlangıç">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}" placeholder="Bitiş">
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Ara
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if toplam_tutar %}
+        <div class="alert alert-info">
+            <strong>Toplam Masraf:</strong> {{ toplam_tutar|floatformat:2 }} ₺
+        </div>
+        {% endif %}
+
+        {% if masraflar %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Masraf No</th>
+                        <th>Kategori</th>
+                        <th>Açıklama</th>
+                        <th>Tutar</th>
+                        <th>Tarih</th>
+                        <th>Ödeme Yöntemi</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for masraf in masraflar %}
+                    <tr>
+                        <td><strong>{{ masraf.masraf_no }}</strong></td>
+                        <td>{{ masraf.kategori.ad|default:"-" }}</td>
+                        <td>{{ masraf.aciklama|truncatewords:10 }}</td>
+                        <td>{{ masraf.tutar|floatformat:2 }} ₺</td>
+                        <td>{{ masraf.tarih|date:"d.m.Y" }}</td>
+                        <td>{{ masraf.get_odeme_yontemi_display }}</td>
+                        <td>
+                            <span class="badge {% if masraf.durum == 'odendi' %}bg-success{% elif masraf.durum == 'iptal' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ masraf.get_durum_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'masraf:duzenle' masraf.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'masraf:sil' masraf.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if masraflar.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if masraflar.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ masraflar.previous_page_number }}">Önceki</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Sayfa {{ masraflar.number }} / {{ masraflar.paginator.num_pages }}</span></li>
+                {% if masraflar.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ masraflar.next_page_number }}">Sonraki</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-receipt-cutoff" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Henüz masraf eklenmemiş</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

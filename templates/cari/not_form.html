@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>{{ title }}{% if cari %} - {{ cari.ad_soyad }}{% elif notu %} - {{ notu.cari.ad_soyad }}{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">{{ form.baslik.label }}</label>
+                {{ form.baslik }}
+                {% if form.baslik.errors %}
+                    <div class="text-danger small">{{ form.baslik.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.icerik.label }}</label>
+                {{ form.icerik }}
+                {% if form.icerik.errors %}
+                    <div class="text-danger small">{{ form.icerik.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Kaydet
+                </button>
+                {% if cari %}
+                <a href="{% url 'cari:detay' cari.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+                {% elif notu %}
+                <a href="{% url 'cari:detay' notu.cari.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,5 +17,15 @@ urlpatterns = [
     path('masraf/', include('masraf.urls')),
     path('finans/', include('finans.urls')),
     path('butce/', include('butce.urls')),
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('', views.home, name='home'),
 ]
+
+# Handler'ları ekle
+handler404 = 'stoktakip.views.handler404'
+handler500 = 'stoktakip.views.handler500'
+
+# Media files (sadece development için)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # STATIC_ROOT sadece production'da kullanılır, development'ta STATICFILES_DIRS kullanılır
+    # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

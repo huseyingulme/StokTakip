@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Cari Sil - {{ cari.ad_soyad }}{% endblock %}
+{% block page_title %}Cari Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Cari Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu cariyi silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ cari.ad_soyad }}</strong><br>
+            {% if cari.hareketler.exists %}
+            <small>Bu carinin hareketi olduğu için pasif duruma getirilecektir.</small>
+            {% endif %}
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, {% if cari.hareketler.exists %}Pasif Yap{% else %}Sil{% endif %}
+            </button>
+            <a href="{% url 'cari:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

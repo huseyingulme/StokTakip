@@ -1,68 +1,75 @@
 {% extends "base.html" %}
-
 {% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">{{ title }}</h5>
+<div class="card">
+    <div class="card-header">
+        <h5>{{ title }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.fatura_no.label }}</label>
+                    {{ form.fatura_no }}
+                    {% if form.fatura_no.errors %}
+                        <div class="text-danger small">{{ form.fatura_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.fatura_tarihi.label }}</label>
+                    {{ form.fatura_tarihi }}
+                    {% if form.fatura_tarihi.errors %}
+                        <div class="text-danger small">{{ form.fatura_tarihi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.cari.label }}</label>
+                    {{ form.cari }}
+                    {% if form.cari.errors %}
+                        <div class="text-danger small">{{ form.cari.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.fatura_tipi.label }}</label>
+                    {{ form.fatura_tipi }}
+                    {% if form.fatura_tipi.errors %}
+                        <div class="text-danger small">{{ form.fatura_tipi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.durum.label }}</label>
+                    {{ form.durum }}
+                    {% if form.durum.errors %}
+                        <div class="text-danger small">{{ form.durum.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.vade_tarihi.label }}</label>
+                    {{ form.vade_tarihi }}
+                    {% if form.vade_tarihi.errors %}
+                        <div class="text-danger small">{{ form.vade_tarihi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.aciklama.label }}</label>
+                    {{ form.aciklama }}
+                    {% if form.aciklama.errors %}
+                        <div class="text-danger small">{{ form.aciklama.errors }}</div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.fatura_no.label }}</label>
-                            {{ form.fatura_no }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.musteri.label }}</label>
-                            {{ form.musteri }}
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.fatura_tarihi.label }}</label>
-                            {{ form.fatura_tarihi }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.vade_tarihi.label }}</label>
-                            {{ form.vade_tarihi }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.fatura_tipi.label }}</label>
-                            {{ form.fatura_tipi }}
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.durum.label }}</label>
-                            {{ form.durum }}
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.aciklama.label }}</label>
-                        {{ form.aciklama }}
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'fatura:index' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> İptal
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> Kaydet
-                        </button>
-                    </div>
-                </form>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Kaydet
+                </button>
+                <a href="{% url 'fatura:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}
-

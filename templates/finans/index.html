@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Finans Yönetimi{% endblock %}
+{% block page_title %}Finans Yönetimi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Finans Yönetimi</h4>
+    <div>
+        <a href="{% url 'finans:hesap_ekle' %}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Yeni Hesap Ekle
+        </a>
+        <a href="{% url 'finans:hareket_ekle' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Yeni Hareket Ekle
+        </a>
+    </div>
+</div>
+
+<!-- Hesaplar Özeti -->
+<div class="row mb-4">
+    {% for hesap in hesaplar %}
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">{{ hesap.ad }}</h6>
+                <p class="card-text mb-1">
+                    <small class="text-muted">{{ hesap.get_hesap_tipi_display }}</small>
+                </p>
+                <h4 class="text-primary">{{ hesap.bakiye|floatformat:2 }} ₺</h4>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'finans:hesap_duzenle' hesap.pk %}" class="btn btn-outline-warning">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'finans:hesap_sil' hesap.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toplamlar -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6>Toplam Gelir</h6>
+                <h4>{{ toplam_gelir|floatformat:2 }} ₺</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h6>Toplam Gider</h6>
+                <h4>{{ toplam_gider|floatformat:2 }} ₺</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6>Net Bakiye</h6>
+                <h4>{{ net_bakiye|floatformat:2 }} ₺</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreleme ve Hareketler -->
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <select name="hesap" class="form-select">
+                        <option value="">Tüm Hesaplar</option>
+                        {% for hesap in hesaplar %}
+                        <option value="{{ hesap.pk }}" {% if hesap_filter == hesap.pk|stringformat:"s" %}selected{% endif %}>{{ hesap.ad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="hareket_tipi" class="form-select">
+                        <option value="">Tüm Hareketler</option>
+                        <option value="gelir" {% if hareket_tipi_filter == 'gelir' %}selected{% endif %}>Gelir</option>
+                        <option value="gider" {% if hareket_tipi_filter == 'gider' %}selected{% endif %}>Gider</option>
+                        <option value="transfer" {% if hareket_tipi_filter == 'transfer' %}selected{% endif %}>Transfer</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}" placeholder="Başlangıç">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}" placeholder="Bitiş">
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Ara
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if hareketler %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Hareket No</th>
+                        <th>Hesap</th>
+                        <th>Hareket Tipi</th>
+                        <th>Tutar</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hareket in hareketler %}
+                    <tr>
+                        <td><strong>{{ hareket.hareket_no }}</strong></td>
+                        <td>{{ hareket.hesap.ad }}</td>
+                        <td>
+                            <span class="badge {% if hareket.hareket_tipi == 'gelir' %}bg-success{% elif hareket.hareket_tipi == 'gider' %}bg-danger{% else %}bg-info{% endif %}">
+                                {{ hareket.get_hareket_tipi_display }}
+                            </span>
+                        </td>
+                        <td class="{% if hareket.hareket_tipi == 'gelir' %}text-success{% elif hareket.hareket_tipi == 'gider' %}text-danger{% endif %}">
+                            {% if hareket.hareket_tipi == 'gelir' %}+{% elif hareket.hareket_tipi == 'gider' %}-{% endif %}{{ hareket.tutar|floatformat:2 }} ₺
+                        </td>
+                        <td>{{ hareket.tarih|date:"d.m.Y" }}</td>
+                        <td>{{ hareket.aciklama|truncatewords:10 }}</td>
+                        <td>
+                            <a href="{% url 'finans:hareket_duzenle' hareket.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'finans:hareket_sil' hareket.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if hareketler.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if hareketler.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ hareketler.previous_page_number }}">Önceki</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Sayfa {{ hareketler.number }} / {{ hareketler.paginator.num_pages }}</span></li>
+                {% if hareketler.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ hareketler.next_page_number }}">Sonraki</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-wallet2" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Henüz finans hareketi eklenmemiş</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

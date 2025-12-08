@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Tahsilat Makbuzları{% endblock %}
+{% block page_title %}Tahsilat Makbuzları{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Tahsilat Makbuzları</h4>
+    <a href="{% url 'cari:tahsilat_ekle' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Yeni Tahsilat Makbuzu
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select name="cari" class="form-select">
+                        <option value="">Tüm Cariler</option>
+                        {% for c in cariler %}
+                        <option value="{{ c.pk }}" {% if cari_filter == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.ad_soyad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}" placeholder="Başlangıç">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}" placeholder="Bitiş">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search"></i> Filtrele
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if makbuzlar %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Makbuz No</th>
+                        <th>Cari</th>
+                        <th>Tutar</th>
+                        <th>Tarih</th>
+                        <th>Ödeme Yöntemi</th>
+                        <th>Dekont No</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for makbuz in makbuzlar %}
+                    <tr>
+                        <td><strong>{{ makbuz.makbuz_no }}</strong></td>
+                        <td>{{ makbuz.cari.ad_soyad }}</td>
+                        <td>{{ makbuz.tutar|floatformat:2 }} ₺</td>
+                        <td>{{ makbuz.tarih|date:"d.m.Y" }}</td>
+                        <td>{{ makbuz.get_odeme_yontemi_display }}</td>
+                        <td>{{ makbuz.dekont_no|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'cari:detay' makbuz.cari.pk %}" class="btn btn-sm btn-info" title="Cari Detay">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if makbuzlar.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if makbuzlar.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ makbuzlar.previous_page_number }}">Önceki</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Sayfa {{ makbuzlar.number }} / {{ makbuzlar.paginator.num_pages }}</span></li>
+                {% if makbuzlar.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ makbuzlar.next_page_number }}">Sonraki</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-cash-coin" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Henüz tahsilat makbuzu bulunamadı</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

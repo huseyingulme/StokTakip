@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Bütçe Yönetimi{% endblock %}
+{% block page_title %}Bütçe Yönetimi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Bütçe Yönetimi</h4>
+    <a href="{% url 'butce:ekle' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Yeni Bütçe Ekle
+    </a>
+</div>
+
+<!-- Toplam Bütçe -->
+{% if toplam_butce %}
+<div class="alert alert-info mb-4">
+    <strong>Toplam Bütçe:</strong> {{ toplam_butce|floatformat:2 }} ₺
+</div>
+{% endif %}
+
+<!-- Filtreleme -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select name="kategori" class="form-select">
+                        <option value="">Tüm Kategoriler</option>
+                        {% for kat in kategoriler %}
+                        <option value="{{ kat.pk }}" {% if kategori_filter == kat.pk|stringformat:"s" %}selected{% endif %}>{{ kat.ad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select name="donem" class="form-select">
+                        <option value="">Tüm Dönemler</option>
+                        <option value="aylik" {% if donem_filter == 'aylik' %}selected{% endif %}>Aylık</option>
+                        <option value="yillik" {% if donem_filter == 'yillik' %}selected{% endif %}>Yıllık</option>
+                        <option value="ozel" {% if donem_filter == 'ozel' %}selected{% endif %}>Özel</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search"></i> Ara
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bütçe Listesi -->
+<div class="card">
+    <div class="card-body">
+        {% if butceler %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Başlık</th>
+                        <th>Kategori</th>
+                        <th>Dönem</th>
+                        <th>Başlangıç</th>
+                        <th>Bitiş</th>
+                        <th>Bütçe Tutarı</th>
+                        <th>Kalan Bütçe</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for butce in butceler %}
+                    <tr>
+                        <td><strong>{{ butce.baslik }}</strong></td>
+                        <td>{{ butce.kategori.ad|default:"-" }}</td>
+                        <td>{{ butce.get_donem_display }}</td>
+                        <td>{{ butce.baslangic_tarihi|date:"d.m.Y" }}</td>
+                        <td>{{ butce.bitis_tarihi|date:"d.m.Y" }}</td>
+                        <td>{{ butce.butce_tutari|floatformat:2 }} ₺</td>
+                        <td>
+                            <span class="{% if butce.kalan_butce < 0 %}text-danger{% elif butce.kalan_butce < butce.butce_tutari|floatformat:0|add:'-1000' %}text-warning{% else %}text-success{% endif %}">
+                                {{ butce.kalan_butce|floatformat:2 }} ₺
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'butce:detay' butce.pk %}" class="btn btn-sm btn-info" title="Detay">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'butce:duzenle' butce.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'butce:sil' butce.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if butceler.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if butceler.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ butceler.previous_page_number }}">Önceki</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Sayfa {{ butceler.number }} / {{ butceler.paginator.num_pages }}</span></li>
+                {% if butceler.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ butceler.next_page_number }}">Sonraki</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-piggy-bank" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Henüz bütçe eklenmemiş</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

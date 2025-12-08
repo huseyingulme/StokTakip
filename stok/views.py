@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .models import Urun
+from django.utils import timezone
+from .models import Urun, StokHareketi
 from .forms import UrunForm
 
 
@@ -63,7 +64,6 @@ def urun_duzenle(request, pk):
 
 @login_required
 def urun_sil(request, pk):
-    """Ürün silme"""
     urun = get_object_or_404(Urun, pk=pk)
     
     if request.method == 'POST':
@@ -72,3 +72,44 @@ def urun_sil(request, pk):
         return redirect('stok:index')
     
     return render(request, 'stok/urun_sil.html', {'urun': urun})
+
+
+@login_required
+def stok_duzenle(request, pk):
+    urun = get_object_or_404(Urun, pk=pk)
+    
+    if request.method == 'POST':
+        islem_turu = request.POST.get('islem_turu')
+        miktar = int(request.POST.get('miktar', 0))
+        aciklama = request.POST.get('aciklama', '')
+        
+        if miktar > 0:
+            StokHareketi.objects.create(
+                urun=urun,
+                islem_turu=islem_turu,
+                miktar=miktar,
+                aciklama=aciklama,
+                tarih=timezone.now(),
+                olusturan=request.user
+            )
+            messages.success(request, f'Stok {islem_turu} işlemi başarıyla yapıldı.')
+            return redirect('stok:index')
+        else:
+            messages.error(request, 'Miktar 0\'dan büyük olmalıdır.')
+    
+    return render(request, 'stok/stok_duzenle.html', {'urun': urun})
+
+
+@login_required
+def stok_hareketleri(request, pk):
+    urun = get_object_or_404(Urun, pk=pk)
+    hareketler = StokHareketi.objects.filter(urun=urun).order_by('-tarih')
+    
+    paginator = Paginator(hareketler, 20)
+    page_number = request.GET.get('page')
+    hareketler_page = paginator.get_page(page_number)
+    
+    return render(request, 'stok/stok_hareketleri.html', {
+        'urun': urun,
+        'hareketler': hareketler_page
+    })

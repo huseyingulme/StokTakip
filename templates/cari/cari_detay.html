@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Cari Detay - {{ cari.ad_soyad }}{% endblock %}
+{% block page_title %}Cari Detay - {{ cari.ad_soyad }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Cari Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Ad:</strong> {{ cari.ad_soyad }}</p>
+                <p><strong>Kategori:</strong> {{ cari.get_kategori_display }}</p>
+                <p><strong>Telefon:</strong> {{ cari.telefon|default:"-" }}</p>
+                <p><strong>E-posta:</strong> {{ cari.email|default:"-" }}</p>
+                <p><strong>Adres:</strong> {{ cari.adres|default:"-" }}</p>
+                <p><strong>Bakiye:</strong> 
+                    <span class="badge {% if cari.bakiye > 0 %}bg-danger{% elif cari.bakiye < 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ cari.bakiye|floatformat:2 }} ₺
+                    </span>
+                </p>
+                <div class="mt-3">
+                    <a href="{% url 'cari:duzenle' cari.pk %}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-pencil"></i> Düzenle
+                    </a>
+                    <a href="{% url 'cari:ekstre' cari.pk %}" class="btn btn-info btn-sm">
+                        <i class="bi bi-file-text"></i> Ekstre
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5>Hareketler</h5>
+                <a href="{% url 'cari:hareket_cari_ekle' cari.pk %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus"></i> Yeni Hareket
+                </a>
+            </div>
+            <div class="card-body">
+                {% if hareketler %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Hareket Türü</th>
+                                <th>Tutar</th>
+                                <th>Belge No</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hareket in hareketler %}
+                            <tr>
+                                <td>{{ hareket.tarih|date:"d.m.Y H:i" }}</td>
+                                <td>{{ hareket.get_hareket_turu_display }}</td>
+                                <td>{{ hareket.tutar|floatformat:2 }} ₺</td>
+                                <td>{{ hareket.belge_no|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Henüz hareket yok</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between">
+                <h5>Notlar</h5>
+                <a href="{% url 'cari:not_ekle' cari.pk %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus"></i> Yeni Not
+                </a>
+            </div>
+            <div class="card-body">
+                {% if notlar %}
+                <div class="list-group">
+                    {% for notu in notlar %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ notu.baslik }}</h6>
+                                <p class="mb-1">{{ notu.icerik|truncatewords:20 }}</p>
+                                <small class="text-muted">{{ notu.olusturma_tarihi|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <div>
+                                <a href="{% url 'cari:not_duzenle' notu.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'cari:not_sil' notu.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Henüz not eklenmemiş</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

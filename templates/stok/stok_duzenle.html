@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Stok Düzenle - {{ urun.ad }}{% endblock %}
+{% block page_title %}Stok Düzenle{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>{{ urun.ad }} - Stok Düzenleme</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Mevcut Stok:</strong> 
+                <span class="badge bg-primary">{{ urun.mevcut_stok }} {{ urun.birim }}</span>
+            </div>
+            <div class="col-md-6">
+                <strong>Satış Fiyatı:</strong> {{ urun.fiyat|floatformat:2 }} ₺
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">İşlem Türü</label>
+                    <select name="islem_turu" class="form-select" required>
+                        <option value="giriş">Stok Girişi (Artır)</option>
+                        <option value="çıkış">Stok Çıkışı (Azalt)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Miktar</label>
+                    <input type="number" name="miktar" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="aciklama" class="form-control" placeholder="Açıklama">
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Kaydet
+                </button>
+                <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Geri
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

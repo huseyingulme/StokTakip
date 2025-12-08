@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Kalem Sil{% endblock %}
+{% block page_title %}Kalem Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Fatura Kalemi Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu kalemi silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ kalem.urun_adi }}</strong> - {{ kalem.miktar }} adet - {{ kalem.toplam_tutar|floatformat:2 }} ₺
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'fatura:detay' kalem.fatura.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

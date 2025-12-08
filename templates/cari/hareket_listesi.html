@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Cari Hareket Föyü{% endblock %}
+{% block page_title %}Cari Hareket Föyü{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Cari Hareket Föyü</h5>
+        <a href="{% url 'cari:hareket_ekle' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle"></i> Yeni Hareket
+        </a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <select name="cari" class="form-select">
+                        <option value="">Tüm Cariler</option>
+                        {% for c in cariler %}
+                        <option value="{{ c.pk }}" {% if cari_filter == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.ad_soyad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="hareket_turu" class="form-select">
+                        <option value="">Tüm Türler</option>
+                        <option value="satis_faturasi" {% if hareket_turu_filter == 'satis_faturasi' %}selected{% endif %}>Satış Faturası</option>
+                        <option value="alis_faturasi" {% if hareket_turu_filter == 'alis_faturasi' %}selected{% endif %}>Alış Faturası</option>
+                        <option value="tahsilat" {% if hareket_turu_filter == 'tahsilat' %}selected{% endif %}>Tahsilat</option>
+                        <option value="odeme" {% if hareket_turu_filter == 'odeme' %}selected{% endif %}>Ödeme</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}" placeholder="Başlangıç">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}" placeholder="Bitiş">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search"></i> Filtrele
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if hareketler %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Cari</th>
+                        <th>Hareket Türü</th>
+                        <th>Tutar</th>
+                        <th>Belge No</th>
+                        <th>Açıklama</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hareket in hareketler %}
+                    <tr>
+                        <td>{{ hareket.tarih|date:"d.m.Y H:i" }}</td>
+                        <td>{{ hareket.cari.ad_soyad }}</td>
+                        <td>
+                            <span class="badge {% if hareket.hareket_turu == 'satis_faturasi' or hareket.hareket_turu == 'odeme' %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ hareket.get_hareket_turu_display }}
+                            </span>
+                        </td>
+                        <td>{{ hareket.tutar|floatformat:2 }} ₺</td>
+                        <td>{{ hareket.belge_no|default:"-" }}</td>
+                        <td>{{ hareket.aciklama|default:"-"|truncatewords:5 }}</td>
+                        <td>
+                            <a href="{% url 'cari:hareket_duzenle' hareket.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'cari:hareket_sil' hareket.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if hareketler.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if hareketler.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ hareketler.previous_page_number }}">Önceki</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Sayfa {{ hareketler.number }} / {{ hareketler.paginator.num_pages }}</span></li>
+                {% if hareketler.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ hareketler.next_page_number }}">Sonraki</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-list-ul" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Henüz hareket bulunamadı</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

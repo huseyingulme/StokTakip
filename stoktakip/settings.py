@@ -15,8 +15,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/raporlar/'  # Giriş sonrası dashboard'a yönlendir
+LOGOUT_REDIRECT_URL = '/accounts/login/'  # Çıkış sonrası login sayfasına yönlendir
 
 
 # Application definition
@@ -108,3 +108,27 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Security settings (production için)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+# Session settings
+SESSION_COOKIE_AGE = 86400  # 24 saat
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Error pages (urls.py'de tanımlı)

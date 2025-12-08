@@ -53,13 +53,13 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Müşteri İstatistikleri -->
+    <!-- Cari İstatistikleri -->
     <div class="col-md-3">
         <div class="card stats-card info text-white">
             <div class="card-body">
                 <i class="bi bi-people fs-1 mb-2"></i>
-                <h3>{{ toplam_musteri_sayisi }}</h3>
-                <p>Toplam Müşteri</p>
+                <h3>{{ toplam_cari_sayisi }}</h3>
+                <p>Toplam Cari</p>
             </div>
         </div>
     </div>
@@ -68,8 +68,8 @@
         <div class="card stats-card text-white" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
             <div class="card-body">
                 <i class="bi bi-person fs-1 mb-2"></i>
-                <h3>{{ bireysel_musteri }}</h3>
-                <p>Bireysel Müşteri</p>
+                <h3>{{ musteri_sayisi }}</h3>
+                <p>Müşteri</p>
             </div>
         </div>
     </div>
@@ -78,8 +78,8 @@
         <div class="card stats-card info text-white">
             <div class="card-body">
                 <i class="bi bi-building fs-1 mb-2"></i>
-                <h3>{{ kurumsal_musteri }}</h3>
-                <p>Kurumsal Müşteri</p>
+                <h3>{{ tedarikci_sayisi }}</h3>
+                <p>Tedarikçi</p>
             </div>
         </div>
     </div>
@@ -155,7 +155,7 @@
                                 <strong>{{ urun.ad }}</strong><br>
                                 <small class="text-muted">{{ urun.fiyat|floatformat:2 }} ₺</small>
                             </div>
-                            <span class="badge bg-success">{{ urun.stok_adedi }}</span>
+                            <span class="badge bg-success">{{ urun.mevcut_stok }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -170,25 +170,25 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-people"></i> Son Eklenen Müşteriler</h5>
+                <h5 class="mb-0"><i class="bi bi-people"></i> Son Eklenen Cariler</h5>
             </div>
             <div class="card-body">
-                {% if son_musteriler %}
+                {% if son_cariler %}
                 <div class="list-group list-group-flush">
-                    {% for musteri in son_musteriler %}
+                    {% for cari in son_cariler %}
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <strong>{{ musteri.ad_soyad }}</strong><br>
-                                <small class="text-muted">{{ musteri.get_tip_display }}</small>
+                                <strong>{{ cari.ad_soyad }}</strong><br>
+                                <small class="text-muted">{{ cari.get_kategori_display }}</small>
                             </div>
-                            <span class="badge bg-info">{{ musteri.telefon|default:"-" }}</span>
+                            <span class="badge bg-info">{{ cari.telefon|default:"-" }}</span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">Henüz müşteri eklenmemiş</p>
+                <p class="text-muted">Henüz cari eklenmemiş</p>
                 {% endif %}
             </div>
         </div>
@@ -207,7 +207,7 @@
                         <div class="d-flex justify-content-between">
                             <div>
                                 <strong>{{ fatura.fatura_no }}</strong><br>
-                                <small class="text-muted">{{ fatura.musteri|default:"-" }}</small>
+                                <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-success">{{ fatura.genel_toplam|floatformat:2 }} ₺</span><br>

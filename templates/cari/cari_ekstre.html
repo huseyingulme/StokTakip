@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Cari Ekstre - {{ cari.ad_soyad }}{% endblock %}
+{% block page_title %}Cari Ekstre - {{ cari.ad_soyad }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>{{ cari.ad_soyad }} - Hesap Ekstresi</h5>
+        <a href="{% url 'cari:detay' cari.pk %}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Geri
+        </a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrele
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <strong>Açılış Bakiyesi:</strong><br>
+                        <span class="h5">{{ acilis_bakiye|floatformat:2 }} ₺</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <strong>Kapanış Bakiyesi:</strong><br>
+                        <span class="h5">{{ kapanis_bakiye|floatformat:2 }} ₺</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <strong>Dönem Farkı:</strong><br>
+                        <span class="h5">{{ kapanis_bakiye|floatformat:2 }} ₺</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if ekstre_satirlari %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                        <th>Belge</th>
+                        <th class="text-end">Borç</th>
+                        <th class="text-end">Alacak</th>
+                        <th class="text-end">Bakiye</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for satir in ekstre_satirlari %}
+                    <tr>
+                        <td>{{ satir.tarih|date:"d.m.Y" }}</td>
+                        <td>{{ satir.aciklama }}</td>
+                        <td>{{ satir.belge }}</td>
+                        <td class="text-end">
+                            {% if satir.borc > 0 %}
+                            <span class="text-danger">{{ satir.borc|floatformat:2 }} ₺</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if satir.alacak > 0 %}
+                            <span class="text-success">{{ satir.alacak|floatformat:2 }} ₺</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong class="{% if satir.bakiye > 0 %}text-danger{% elif satir.bakiye < 0 %}text-success{% endif %}">
+                                {{ satir.bakiye|floatformat:2 }} ₺
+                            </strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-file-text" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Seçilen tarih aralığında hareket bulunamadı</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

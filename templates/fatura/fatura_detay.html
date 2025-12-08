@@ -1,152 +1,99 @@
 {% extends "base.html" %}
-
 {% block title %}Fatura Detay - {{ fatura.fatura_no }}{% endblock %}
+{% block page_title %}Fatura Detay - {{ fatura.fatura_no }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-receipt"></i> Fatura Detayı: {{ fatura.fatura_no }}</h2>
-    <div>
-        <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-warning">
-            <i class="bi bi-pencil"></i> Düzenle
-        </a>
-        <a href="{% url 'fatura:index' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Geri
-        </a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Fatura Bilgileri</h5>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Fatura No:</strong> {{ fatura.fatura_no }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Fatura Tarihi:</strong> {{ fatura.fatura_tarihi|date:"d.m.Y" }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Müşteri:</strong> {{ fatura.musteri|default:"-" }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Vade Tarihi:</strong> {{ fatura.vade_tarihi|date:"d.m.Y"|default:"-" }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Fatura Tipi:</strong> 
-                        {% if fatura.fatura_tipi == 'Satis' %}
-                            <span class="badge bg-success">{{ fatura.get_fatura_tipi_display }}</span>
-                        {% else %}
-                            <span class="badge bg-info">{{ fatura.get_fatura_tipi_display }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Durum:</strong> 
-                        {% if fatura.durum == 'Odendi' %}
-                            <span class="badge bg-success">{{ fatura.get_durum_display }}</span>
-                        {% elif fatura.durum == 'Beklemede' %}
-                            <span class="badge bg-warning text-dark">{{ fatura.get_durum_display }}</span>
-                        {% else %}
-                            <span class="badge bg-danger">{{ fatura.get_durum_display }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if fatura.aciklama %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <strong>Açıklama:</strong> {{ fatura.aciklama }}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Fatura Kalemleri -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Fatura Kalemleri</h5>
-            </div>
-            <div class="card-body">
-                {% if kalemler %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Sıra</th>
-                                <th>Ürün Adı</th>
-                                <th>Miktar</th>
-                                <th>Birim Fiyat</th>
-                                <th>KDV %</th>
-                                <th>KDV Tutarı</th>
-                                <th>Toplam</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for kalem in kalemler %}
-                            <tr>
-                                <td>{{ kalem.sira_no }}</td>
-                                <td>{{ kalem.urun_adi }}</td>
-                                <td>{{ kalem.miktar }}</td>
-                                <td>{{ kalem.birim_fiyat|floatformat:2 }} ₺</td>
-                                <td>%{{ kalem.kdv_orani }}</td>
-                                <td>{{ kalem.kdv_tutari|floatformat:2 }} ₺</td>
-                                <td><strong>{{ kalem.toplam_tutar|floatformat:2 }} ₺</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted">Henüz fatura kalemi eklenmemiş.</p>
-                {% endif %}
-            </div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <h5>Fatura: {{ fatura.fatura_no }}</h5>
+        <div>
+            <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-sm btn-warning">
+                <i class="bi bi-pencil"></i> Düzenle
+            </a>
+            <a href="{% url 'fatura:sil' fatura.pk %}" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i> Sil
+            </a>
         </div>
     </div>
-
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Tutar Özeti</h5>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Tarih:</strong> {{ fatura.fatura_tarihi|date:"d.m.Y" }}</p>
+                <p><strong>Cari:</strong> {{ fatura.cari.ad_soyad|default:"-" }}</p>
+                <p><strong>Tip:</strong> {{ fatura.get_fatura_tipi_display }}</p>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Toplam Tutar:</span>
-                    <strong>{{ fatura.toplam_tutar|floatformat:2 }} ₺</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>KDV Tutarı:</span>
-                    <strong>{{ fatura.kdv_tutari|floatformat:2 }} ₺</strong>
-                </div>
-                <hr>
-                <div class="d-flex justify-content-between">
-                    <span><strong>Genel Toplam:</strong></span>
-                    <strong class="fs-5 text-primary">{{ fatura.genel_toplam|floatformat:2 }} ₺</strong>
-                </div>
+            <div class="col-md-6">
+                <p><strong>Durum:</strong> {{ fatura.get_durum_display }}</p>
+                <p><strong>Vade Tarihi:</strong> {{ fatura.vade_tarihi|date:"d.m.Y"|default:"-" }}</p>
+                <p><strong>Genel Toplam:</strong> <strong>{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></p>
             </div>
         </div>
 
-        <div class="card mt-4">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Danger Zone</h5>
-            </div>
-            <div class="card-body">
-                <a href="{% url 'fatura:sil' fatura.pk %}" class="btn btn-danger w-100">
-                    <i class="bi bi-trash"></i> Faturayı Sil
-                </a>
-            </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Fatura Kalemleri</h6>
+            <a href="{% url 'fatura:kalem_ekle' fatura.pk %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Kalem Ekle
+            </a>
         </div>
+
+        {% if kalemler %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Sıra</th>
+                        <th>Ürün</th>
+                        <th>Miktar</th>
+                        <th>Birim Fiyat</th>
+                        <th>KDV</th>
+                        <th>Toplam</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kalem in kalemler %}
+                    <tr>
+                        <td>{{ kalem.sira_no }}</td>
+                        <td>{{ kalem.urun_adi }}</td>
+                        <td>{{ kalem.miktar }}</td>
+                        <td>{{ kalem.birim_fiyat|floatformat:2 }} ₺</td>
+                        <td>{{ kalem.kdv_orani }}%</td>
+                        <td>{{ kalem.toplam_tutar|floatformat:2 }} ₺</td>
+                        <td>
+                            <a href="{% url 'fatura:kalem_duzenle' kalem.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'fatura:kalem_sil' kalem.pk %}" class="btn btn-sm btn-danger" title="Sil">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>Ara Toplam:</strong></td>
+                        <td><strong>{{ fatura.toplam_tutar|floatformat:2 }} ₺</strong></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>KDV:</strong></td>
+                        <td><strong>{{ fatura.kdv_tutari|floatformat:2 }} ₺</strong></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>Genel Toplam:</strong></td>
+                        <td><strong>{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Henüz kalem eklenmemiş. Kalem eklemek için yukarıdaki butonu kullanın.
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
-
-{% block extra_head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-{% endblock %}
-

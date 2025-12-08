@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>{{ title }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.hareket_no.label }}</label>
+                    {{ form.hareket_no }}
+                    {% if form.hareket_no.errors %}
+                        <div class="text-danger small">{{ form.hareket_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.hareket_tipi.label }}</label>
+                    {{ form.hareket_tipi }}
+                    {% if form.hareket_tipi.errors %}
+                        <div class="text-danger small">{{ form.hareket_tipi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.hesap.label }}</label>
+                    {{ form.hesap }}
+                    {% if form.hesap.errors %}
+                        <div class="text-danger small">{{ form.hesap.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6" id="hedef_hesap_div" style="display: none;">
+                    <label class="form-label">{{ form.hedef_hesap.label }}</label>
+                    {{ form.hedef_hesap }}
+                    {% if form.hedef_hesap.errors %}
+                        <div class="text-danger small">{{ form.hedef_hesap.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.tutar.label }}</label>
+                    {{ form.tutar }}
+                    {% if form.tutar.errors %}
+                        <div class="text-danger small">{{ form.tutar.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.tarih.label }}</label>
+                    {{ form.tarih }}
+                    {% if form.tarih.errors %}
+                        <div class="text-danger small">{{ form.tarih.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.belge_no.label }}</label>
+                    {{ form.belge_no }}
+                    {% if form.belge_no.errors %}
+                        <div class="text-danger small">{{ form.belge_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.aciklama.label }}</label>
+                    {{ form.aciklama }}
+                    {% if form.aciklama.errors %}
+                        <div class="text-danger small">{{ form.aciklama.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Kaydet
+                </button>
+                <a href="{% url 'finans:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hareketTipi = document.getElementById('{{ form.hareket_tipi.id_for_label }}');
+    const hedefHesapDiv = document.getElementById('hedef_hesap_div');
+    
+    function toggleHedefHesap() {
+        if (hareketTipi.value === 'transfer') {
+            hedefHesapDiv.style.display = 'block';
+            document.getElementById('{{ form.hedef_hesap.id_for_label }}').required = true;
+        } else {
+            hedefHesapDiv.style.display = 'none';
+            document.getElementById('{{ form.hedef_hesap.id_for_label }}').required = false;
+        }
+    }
+    
+    hareketTipi.addEventListener('change', toggleHedefHesap);
+    toggleHedefHesap();
+});
+</script>
+{% endblock %}
+

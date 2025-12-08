@@ -46,17 +46,20 @@ def index(request):
 
 @login_required
 def fatura_ekle(request):
-    """Yeni fatura ekleme"""
+    tip = request.GET.get('tip', 'Satis')
     if request.method == 'POST':
         form = FaturaForm(request.POST)
         if form.is_valid():
-            fatura = form.save()
+            fatura = form.save(commit=False)
+            fatura.olusturan = request.user
+            fatura.save()
             messages.success(request, f'Fatura {fatura.fatura_no} başarıyla oluşturuldu.')
             return redirect('fatura:detay', pk=fatura.pk)
     else:
-        form = FaturaForm()
+        form = FaturaForm(initial={'fatura_tipi': tip})
     
-    return render(request, 'fatura/fatura_form.html', {'form': form, 'title': 'Yeni Fatura Oluştur'})
+    title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
+    return render(request, 'fatura/fatura_form.html', {'form': form, 'title': title, 'tip': tip})
 
 
 @login_required
@@ -91,7 +94,6 @@ def fatura_duzenle(request, pk):
 
 @login_required
 def fatura_sil(request, pk):
-    """Fatura silme"""
     fatura = get_object_or_404(Fatura, pk=pk)
     
     if request.method == 'POST':
@@ -101,3 +103,56 @@ def fatura_sil(request, pk):
         return redirect('fatura:index')
     
     return render(request, 'fatura/fatura_sil.html', {'fatura': fatura})
+
+
+@login_required
+def kalem_ekle(request, fatura_pk):
+    fatura = get_object_or_404(Fatura, pk=fatura_pk)
+    
+    if request.method == 'POST':
+        form = FaturaKalemForm(request.POST)
+        if form.is_valid():
+            kalem = form.save(commit=False)
+            kalem.fatura = fatura
+            if kalem.urun and not kalem.urun_adi:
+                kalem.urun_adi = kalem.urun.ad
+            kalem.save()
+            messages.success(request, 'Fatura kalemi başarıyla eklendi.')
+            return redirect('fatura:detay', pk=fatura_pk)
+    else:
+        form = FaturaKalemForm()
+    
+    return render(request, 'fatura/kalem_form.html', {'form': form, 'fatura': fatura, 'title': 'Yeni Kalem Ekle'})
+
+
+@login_required
+def kalem_duzenle(request, pk):
+    kalem = get_object_or_404(FaturaKalem, pk=pk)
+    fatura = kalem.fatura
+    
+    if request.method == 'POST':
+        form = FaturaKalemForm(request.POST, instance=kalem)
+        if form.is_valid():
+            kalem = form.save(commit=False)
+            if kalem.urun and not kalem.urun_adi:
+                kalem.urun_adi = kalem.urun.ad
+            kalem.save()
+            messages.success(request, 'Fatura kalemi başarıyla güncellendi.')
+            return redirect('fatura:detay', pk=fatura.pk)
+    else:
+        form = FaturaKalemForm(instance=kalem)
+    
+    return render(request, 'fatura/kalem_form.html', {'form': form, 'fatura': fatura, 'kalem': kalem, 'title': 'Kalem Düzenle'})
+
+
+@login_required
+def kalem_sil(request, pk):
+    kalem = get_object_or_404(FaturaKalem, pk=pk)
+    fatura_pk = kalem.fatura.pk
+    
+    if request.method == 'POST':
+        kalem.delete()
+        messages.success(request, 'Fatura kalemi başarıyla silindi.')
+        return redirect('fatura:detay', pk=fatura_pk)
+    
+    return render(request, 'fatura/kalem_sil.html', {'kalem': kalem})

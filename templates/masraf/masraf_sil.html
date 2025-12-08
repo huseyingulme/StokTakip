@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Masraf Sil{% endblock %}
+{% block page_title %}Masraf Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Masraf Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu masrafı silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ masraf.masraf_no }}</strong><br>
+            {{ masraf.aciklama|truncatewords:10 }}<br>
+            <strong>{{ masraf.tutar|floatformat:2 }} ₺</strong>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Evet, Sil
+            </button>
+            <a href="{% url 'masraf:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>{{ title }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.masraf_no.label }}</label>
+                    {{ form.masraf_no }}
+                    {% if form.masraf_no.errors %}
+                        <div class="text-danger small">{{ form.masraf_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.kategori.label }}</label>
+                    {{ form.kategori }}
+                    {% if form.kategori.errors %}
+                        <div class="text-danger small">{{ form.kategori.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.tarih.label }}</label>
+                    {{ form.tarih }}
+                    {% if form.tarih.errors %}
+                        <div class="text-danger small">{{ form.tarih.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.tutar.label }}</label>
+                    {{ form.tutar }}
+                    {% if form.tutar.errors %}
+                        <div class="text-danger small">{{ form.tutar.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.odeme_yontemi.label }}</label>
+                    {{ form.odeme_yontemi }}
+                    {% if form.odeme_yontemi.errors %}
+                        <div class="text-danger small">{{ form.odeme_yontemi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.durum.label }}</label>
+                    {{ form.durum }}
+                    {% if form.durum.errors %}
+                        <div class="text-danger small">{{ form.durum.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.belge_no.label }}</label>
+                    {{ form.belge_no }}
+                    {% if form.belge_no.errors %}
+                        <div class="text-danger small">{{ form.belge_no.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.aciklama.label }}</label>
+                    {{ form.aciklama }}
+                    {% if form.aciklama.errors %}
+                        <div class="text-danger small">{{ form.aciklama.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Kaydet
+                </button>
+                <a href="{% url 'masraf:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

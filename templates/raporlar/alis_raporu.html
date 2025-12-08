@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Alış Raporu{% endblock %}
+{% block page_title %}Alış Raporu{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Alış Raporu</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cari</label>
+                    <select name="cari" class="form-select">
+                        <option value="">Tüm Cariler</option>
+                        {% for c in cariler %}
+                        <option value="{{ c.pk }}" {% if cari_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.ad_soyad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Raporla
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6>Toplam Tutar</h6>
+                        <h3>{{ toplam_tutar|floatformat:2 }} ₺</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h6>Toplam KDV</h6>
+                        <h3>{{ toplam_kdv|floatformat:2 }} ₺</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body">
+                        <h6>Fatura Sayısı</h6>
+                        <h3>{{ faturalar.count }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if cari_bazli %}
+        <h6>Cari Bazlı Özet</h6>
+        <div class="table-responsive mb-4">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Cari</th>
+                        <th>Fatura Sayısı</th>
+                        <th>Toplam Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cari_adi, veri in cari_bazli.items %}
+                    <tr>
+                        <td><strong>{{ cari_adi }}</strong></td>
+                        <td>{{ veri.fatura_sayisi }}</td>
+                        <td>{{ veri.toplam|floatformat:2 }} ₺</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if faturalar %}
+        <h6>Fatura Detayları</h6>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fatura No</th>
+                        <th>Tarih</th>
+                        <th>Cari</th>
+                        <th>Genel Toplam</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fatura in faturalar %}
+                    <tr>
+                        <td><strong>{{ fatura.fatura_no }}</strong></td>
+                        <td>{{ fatura.fatura_tarihi|date:"d.m.Y" }}</td>
+                        <td>{{ fatura.cari.ad_soyad|default:"-" }}</td>
+                        <td>{{ fatura.genel_toplam|floatformat:2 }} ₺</td>
+                        <td>
+                            <span class="badge {% if fatura.durum == 'Odendi' %}bg-success{% elif fatura.durum == 'Iptal' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ fatura.get_durum_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'fatura:detay' fatura.pk %}" class="btn btn-sm btn-info" title="Detay">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-bar-chart-fill" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">Seçilen kriterlere uygun fatura bulunamadı</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
