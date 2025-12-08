@@ -7,6 +7,12 @@
     <div class="card-header d-flex justify-content-between">
         <h5>Fatura: {{ fatura.fatura_no }}</h5>
         <div>
+            <a href="{% url 'fatura:pdf' fatura.pk %}" class="btn btn-sm btn-info" target="_blank">
+                <i class="bi bi-file-pdf"></i> PDF İndir
+            </a>
+            <a href="{% url 'fatura:onizleme' fatura.pk %}" class="btn btn-sm btn-secondary" target="_blank">
+                <i class="bi bi-eye"></i> Önizle
+            </a>
             <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-sm btn-warning">
                 <i class="bi bi-pencil"></i> Düzenle
             </a>

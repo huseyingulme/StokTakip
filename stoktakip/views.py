@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponseNotFound, HttpResponseServerError
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.contrib import messages
 
 
 def handler404(request, exception):
@@ -18,3 +20,11 @@ def home(request):
     if not request.user.is_authenticated:
         return redirect('login')
     return redirect('raporlar:dashboard')
+
+
+def custom_logout(request):
+    """Özel logout view - Çıkış yap ve login sayfasına yönlendir"""
+    if request.user.is_authenticated:
+        logout(request)
+        messages.success(request, 'Başarıyla çıkış yaptınız.')
+    return redirect('login')

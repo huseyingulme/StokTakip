@@ -8,62 +8,161 @@
         <h5>{{ title }}</h5>
     </div>
     <div class="card-body">
-        <form method="post">
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Hata:</strong> Lütfen form hatalarını düzeltin.
+            <ul class="mb-0 mt-2">
+                {% for field in form %}
+                {% for error in field.errors %}
+                <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <form method="post" id="faturaForm">
             {% csrf_token %}
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">{{ form.fatura_no.label }}</label>
-                    {{ form.fatura_no }}
-                    {% if form.fatura_no.errors %}
-                        <div class="text-danger small">{{ form.fatura_no.errors }}</div>
-                    {% endif %}
-                </div>
+            <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label class="form-label">{{ form.fatura_tarihi.label }}</label>
                     {{ form.fatura_tarihi }}
                     {% if form.fatura_tarihi.errors %}
-                        <div class="text-danger small">{{ form.fatura_tarihi.errors }}</div>
+                    <div class="text-danger small">{{ form.fatura_tarihi.errors }}</div>
                     {% endif %}
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">{{ form.cari.label }}</label>
                     {{ form.cari }}
                     {% if form.cari.errors %}
-                        <div class="text-danger small">{{ form.cari.errors }}</div>
+                    <div class="text-danger small">{{ form.cari.errors }}</div>
                     {% endif %}
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">{{ form.fatura_tipi.label }}</label>
-                    {{ form.fatura_tipi }}
-                    {% if form.fatura_tipi.errors %}
-                        <div class="text-danger small">{{ form.fatura_tipi.errors }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">{{ form.durum.label }}</label>
-                    {{ form.durum }}
-                    {% if form.durum.errors %}
-                        <div class="text-danger small">{{ form.durum.errors }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">{{ form.vade_tarihi.label }}</label>
                     {{ form.vade_tarihi }}
                     {% if form.vade_tarihi.errors %}
-                        <div class="text-danger small">{{ form.vade_tarihi.errors }}</div>
+                    <div class="text-danger small">{{ form.vade_tarihi.errors }}</div>
                     {% endif %}
                 </div>
-                <div class="col-12">
-                    <label class="form-label">{{ form.aciklama.label }}</label>
-                    {{ form.aciklama }}
-                    {% if form.aciklama.errors %}
-                        <div class="text-danger small">{{ form.aciklama.errors }}</div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.fatura_tipi.label }}</label>
+                    {{ form.fatura_tipi }}
+                    {% if form.fatura_tipi.errors %}
+                    <div class="text-danger small">{{ form.fatura_tipi.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.durum.label }}</label>
+                    {{ form.durum }}
+                    {% if form.durum.errors %}
+                    <div class="text-danger small">{{ form.durum.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{{ form.iskonto_orani.label }}</label>
+                    {{ form.iskonto_orani }}
+                    {% if form.iskonto_orani.errors %}
+                    <div class="text-danger small">{{ form.iskonto_orani.errors }}</div>
                     {% endif %}
                 </div>
             </div>
+
+            <hr>
+
+            <div class="mb-3">
+                <h6>Ürünler</h6>
+                <table class="table table-bordered" id="urunTablosu">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Ürün</th>
+                            <th style="width: 10%;">Miktar</th>
+                            <th style="width: 12%;">KDV Hariç Fiyat</th>
+                            <th style="width: 12%;">KDV Dahil Fiyat</th>
+                            <th style="width: 10%;">KDV %</th>
+                            <th style="width: 12%;">KDV Tutarı</th>
+                            <th style="width: 12%;">Toplam</th>
+                            <th style="width: 2%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="urunTbody">
+                        <tr class="urun-satir">
+                            <td>
+                                <select class="form-control urun-select" name="urun_id[]">
+                                    <option value="">Seçiniz</option>
+                                    {% for urun in urunler %}
+                                    <option value="{{ urun.id }}" data-fiyat="{{ urun.fiyat }}"
+                                        data-stok="{{ urun.mevcut_stok }}">{{ urun.ad }} - Stok: {{ urun.mevcut_stok }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control miktar" name="miktar[]" min="1" value="1"
+                                    step="1">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control birim-fiyat" name="birim_fiyat[]" step="0.01"
+                                    min="0" value="0.00">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control kdv-dahil-fiyat" name="kdv_dahil_fiyat[]"
+                                    step="0.01" min="0" value="0.00">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control kdv-orani" name="kdv_orani[]" min="0" max="100"
+                                    value="20" step="1">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control kdv-tutari" readonly value="0.00">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control toplam-tutar" readonly value="0.00">
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger satir-sil">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="urunEkle">
+                    <i class="bi bi-plus-circle"></i> Ürün Ekle
+                </button>
+            </div>
+
+            <hr>
+
+            <div class="row">
+                <div class="col-md-6"></div>
+                <div class="col-md-6">
+                    <table class="table table-bordered">
+                        <tr>
+                            <td><strong>Ara Toplam (KDV Hariç)</strong></td>
+                            <td class="text-end"><span id="araToplam">0.00</span> ₺</td>
+                        </tr>
+                        <tr>
+                            <td><strong>KDV Toplamı</strong></td>
+                            <td class="text-end"><span id="kdvToplam">0.00</span> ₺</td>
+                        </tr>
+                        <tr>
+                            <td><strong>İskonto</strong></td>
+                            <td class="text-end"><span id="iskontoTutari">0.00</span> ₺</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><strong>Genel Toplam</strong></td>
+                            <td class="text-end"><strong><span id="genelToplam">0.00</span> ₺</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
             <div class="mt-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Kaydet
+                <button type="submit" class="btn btn-primary" id="kaydetBtn">
+                    <i class="bi bi-save"></i> Faturayı Kaydet
                 </button>
                 <a href="{% url 'fatura:index' %}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> İptal
@@ -72,4 +171,142 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const faturaTarihiField = document.getElementById('id_fatura_tarihi');
+        const faturaTipiField = document.getElementById('id_fatura_tipi');
+        const iskontoOraniField = document.getElementById('id_iskonto_orani');
+
+        if (faturaTarihiField && !faturaTarihiField.value) {
+            const today = new Date().toISOString().split('T')[0];
+            faturaTarihiField.value = today;
+        }
+
+        function hesaplaSatir(satir) {
+            const miktar = parseFloat(satir.querySelector('.miktar').value) || 0;
+            const birimFiyat = parseFloat(satir.querySelector('.birim-fiyat').value) || 0;
+            const kdvDahilFiyat = parseFloat(satir.querySelector('.kdv-dahil-fiyat').value) || 0;
+            const kdvOrani = parseFloat(satir.querySelector('.kdv-orani').value) || 0;
+
+            let kdvHaricFiyat = birimFiyat;
+            let kdvTutari = 0;
+            let toplamTutar = 0;
+
+            if (kdvDahilFiyat > 0 && kdvOrani > 0) {
+                kdvHaricFiyat = kdvDahilFiyat / (1 + kdvOrani / 100);
+                satir.querySelector('.birim-fiyat').value = kdvHaricFiyat.toFixed(2);
+            } else if (birimFiyat > 0 && kdvOrani > 0) {
+                const kdvDahil = birimFiyat * (1 + kdvOrani / 100);
+                satir.querySelector('.kdv-dahil-fiyat').value = kdvDahil.toFixed(2);
+            }
+
+            if (kdvHaricFiyat > 0 && miktar > 0) {
+                kdvTutari = kdvHaricFiyat * miktar * (kdvOrani / 100);
+                toplamTutar = kdvHaricFiyat * miktar;
+            }
+
+            satir.querySelector('.kdv-tutari').value = kdvTutari.toFixed(2);
+            satir.querySelector('.toplam-tutar').value = toplamTutar.toFixed(2);
+
+            hesaplaToplamlar();
+        }
+
+        function hesaplaToplamlar() {
+            let araToplam = 0;
+            let kdvToplam = 0;
+
+            document.querySelectorAll('.urun-satir').forEach(satir => {
+                const toplamTutar = parseFloat(satir.querySelector('.toplam-tutar').value) || 0;
+                const kdvTutari = parseFloat(satir.querySelector('.kdv-tutari').value) || 0;
+                araToplam += toplamTutar;
+                kdvToplam += kdvTutari;
+            });
+
+            const iskontoOrani = parseFloat(iskontoOraniField.value) || 0;
+            const iskontoTutari = araToplam * (iskontoOrani / 100);
+            const genelToplam = araToplam + kdvToplam - iskontoTutari;
+
+            document.getElementById('araToplam').textContent = araToplam.toFixed(2);
+            document.getElementById('kdvToplam').textContent = kdvToplam.toFixed(2);
+            document.getElementById('iskontoTutari').textContent = iskontoTutari.toFixed(2);
+            document.getElementById('genelToplam').textContent = genelToplam.toFixed(2);
+        }
+
+        document.getElementById('urunEkle').addEventListener('click', function () {
+            const tbody = document.getElementById('urunTbody');
+            const yeniSatir = tbody.querySelector('.urun-satir').cloneNode(true);
+            yeniSatir.querySelectorAll('input').forEach(input => {
+                if (input.type !== 'hidden') {
+                    input.value = input.classList.contains('miktar') ? '1' : '0.00';
+                }
+            });
+            yeniSatir.querySelector('.urun-select').value = '';
+            tbody.appendChild(yeniSatir);
+        });
+
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('urun-select')) {
+                const satir = e.target.closest('.urun-satir');
+                const option = e.target.options[e.target.selectedIndex];
+                if (option.value) {
+                    const fiyat = parseFloat(option.dataset.fiyat) || 0;
+                    satir.querySelector('.birim-fiyat').value = fiyat.toFixed(2);
+                    hesaplaSatir(satir);
+                }
+            } else if (e.target.classList.contains('miktar') ||
+                e.target.classList.contains('birim-fiyat') ||
+                e.target.classList.contains('kdv-dahil-fiyat') ||
+                e.target.classList.contains('kdv-orani')) {
+                const satir = e.target.closest('.urun-satir');
+                hesaplaSatir(satir);
+            } else if (e.target === iskontoOraniField) {
+                hesaplaToplamlar();
+            }
+        });
+
+        document.addEventListener('input', function (e) {
+            if (e.target.classList.contains('miktar') ||
+                e.target.classList.contains('birim-fiyat') ||
+                e.target.classList.contains('kdv-dahil-fiyat') ||
+                e.target.classList.contains('kdv-orani')) {
+                const satir = e.target.closest('.urun-satir');
+                hesaplaSatir(satir);
+            } else if (e.target === iskontoOraniField) {
+                hesaplaToplamlar();
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.satir-sil')) {
+                const satir = e.target.closest('.urun-satir');
+                const tbody = document.getElementById('urunTbody');
+                if (tbody.querySelectorAll('.urun-satir').length > 1) {
+                    satir.remove();
+                    hesaplaToplamlar();
+                } else {
+                    alert('En az bir ürün satırı olmalıdır!');
+                }
+            }
+        });
+
+
+        document.getElementById('faturaForm').addEventListener('submit', function (e) {
+            let urunVar = false;
+            document.querySelectorAll('.urun-select').forEach(select => {
+                if (select.value) {
+                    urunVar = true;
+                }
+            });
+
+            if (!urunVar) {
+                e.preventDefault();
+                alert('Lütfen en az bir ürün seçiniz!');
+                return false;
+            }
+        });
+    });
+</script>
 {% endblock %}

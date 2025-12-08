@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filters %}
 {% block title %}Cari Hareket Föyü{% endblock %}
 {% block page_title %}Cari Hareket Föyü{% endblock %}
 
@@ -69,7 +70,25 @@
                             </span>
                         </td>
                         <td>{{ hareket.tutar|floatformat:2 }} ₺</td>
-                        <td>{{ hareket.belge_no|default:"-" }}</td>
+                        <td>
+                            {% if hareket.belge_no %}
+                                {% if hareket.hareket_turu == 'satis_faturasi' or hareket.hareket_turu == 'alis_faturasi' %}
+                                    {% with fatura_id=fatura_nolari|get_item:hareket.belge_no %}
+                                        {% if fatura_id %}
+                                            <a href="{% url 'fatura:detay' fatura_id %}" class="text-primary text-decoration-none" title="Fatura Detayı">
+                                                <i class="bi bi-receipt"></i> {{ hareket.belge_no }}
+                                            </a>
+                                        {% else %}
+                                            {{ hareket.belge_no }}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    {{ hareket.belge_no }}
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>{{ hareket.aciklama|default:"-"|truncatewords:5 }}</td>
                         <td>
                             <a href="{% url 'cari:hareket_duzenle' hareket.pk %}" class="btn btn-sm btn-warning" title="Düzenle">

@@ -59,32 +59,39 @@
     </div>
 </div>
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const urunSelect = document.getElementById('id_urun');
     const urunAdiField = document.getElementById('id_urun_adi');
     const birimFiyatField = document.getElementById('id_birim_fiyat');
+    const miktarField = document.getElementById('id_miktar');
     
-    if (urunSelect && urunAdiField) {
+    if (urunSelect) {
         urunSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption && selectedOption.value) {
-                const optionText = selectedOption.text;
-                const parts = optionText.split(' - ');
-                if (parts.length > 0) {
-                    urunAdiField.value = parts[0].trim();
-                }
-                if (parts.length > 1 && birimFiyatField) {
-                    const fiyatText = parts[parts.length - 1].replace('₺', '').trim();
-                    const fiyat = parseFloat(fiyatText);
-                    if (!isNaN(fiyat)) {
-                        birimFiyatField.value = fiyat.toFixed(2);
-                    }
-                }
+            const urunId = this.value;
+            if (urunId) {
+                const apiUrl = '{% url "fatura:urun_bilgi_api" 0 %}'.replace('0', urunId);
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (urunAdiField) urunAdiField.value = data.urun_adi;
+                            if (birimFiyatField) birimFiyatField.value = parseFloat(data.birim_fiyat).toFixed(2);
+                            if (miktarField && !miktarField.value) miktarField.value = 1;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Hata:', error);
+                    });
+            } else {
+                if (urunAdiField) urunAdiField.value = '';
+                if (birimFiyatField) birimFiyatField.value = '';
             }
         });
     }
 });
 </script>
+{% endblock %}
 {% endblock %}
 

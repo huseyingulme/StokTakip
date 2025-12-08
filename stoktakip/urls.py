@@ -9,7 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('accounts/logout/', views.custom_logout, name='logout'),
     path('stok/', include('stok.urls')),
     path('cari/', include('cari.urls')),
     path('fatura/', include('fatura.urls')),
@@ -17,6 +17,7 @@ urlpatterns = [
     path('masraf/', include('masraf.urls')),
     path('finans/', include('finans.urls')),
     path('butce/', include('butce.urls')),
+    path('api/', include('api.urls')),
     path('', views.home, name='home'),
 ]
 

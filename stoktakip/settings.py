@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
     # local apps
     "accounts",
     "stok",
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     "masraf",
     "finans",
     "butce",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -130,5 +133,17 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
+}
 
 # Error pages (urls.py'de tanımlı)
