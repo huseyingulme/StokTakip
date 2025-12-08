@@ -21,8 +21,8 @@ urlpatterns = [
 ]
 
 # Handler'ları ekle
-handler404 = 'stoktakip.views.handler404'
-handler500 = 'stoktakip.views.handler500'
+handler404 = views.handler404
+handler500 = views.handler500
 
 # Media files (sadece development için)
 if settings.DEBUG:

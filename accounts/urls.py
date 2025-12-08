@@ -1,9 +1,10 @@
 from django.urls import path
-from . import views
+from django.contrib.auth import views as auth_views
 
 app_name = 'accounts'
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('register/', views.register, name='register'),
+    # Django'nun built-in auth views kullanılıyor, burada ekstra bir şey yok
+    # Login ve logout stoktakip/urls.py'de tanımlı
 ]
+

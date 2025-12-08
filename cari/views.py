@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Case, When, F
+from django.db import models
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -28,21 +29,18 @@ def index(request):
     if kategori_filter:
         cari_list = cari_list.filter(kategori=kategori_filter)
 
-    bakiye_filter = request.GET.get('bakiye', '')
-    if bakiye_filter == 'borc':
-        cari_list = [c for c in cari_list if c.bakiye > 0]
-    elif bakiye_filter == 'alacak':
-        cari_list = [c for c in cari_list if c.bakiye < 0]
-
     paginator = Paginator(cari_list, 20)
     page_number = request.GET.get('page')
     cariler = paginator.get_page(page_number)
+    
+    # Her cari için bakiye mutlak değerini hesapla
+    for cari in cariler:
+        cari.bakiye_abs = abs(cari.bakiye)
 
     context = {
         'cariler': cariler,
         'search_query': search_query,
         'kategori_filter': kategori_filter,
-        'bakiye_filter': bakiye_filter,
     }
     return render(request, 'cari/index.html', context)
 

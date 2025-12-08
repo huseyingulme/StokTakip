@@ -17,4 +17,4 @@ def home(request):
     """Ana sayfa - Giriş yapmamış kullanıcıları login'e yönlendir"""
     if not request.user.is_authenticated:
         return redirect('login')
-    return render(request, 'home.html')
+    return redirect('raporlar:dashboard')
