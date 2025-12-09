@@ -1,199 +1,151 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - StokTakip{% endblock %}
+{% block page_title %}<i class="bi bi-speedometer2"></i> Dashboard{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+<!-- Hoş Geldiniz Mesajı -->
+<div class="welcome-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h3 class="mb-1">Hoş Geldiniz, <span class="text-primary">{{ user.first_name|default:user.username }}!</span></h3>
+            <p class="text-muted mb-0">{{ "now"|date:"l, d F Y" }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary">
+                <i class="bi bi-person-circle"></i> Profil
+            </a>
+        </div>
+    </div>
 </div>
 
-<!-- İstatistik Kartları -->
+<!-- Ana İstatistik Kartları -->
 <div class="row g-4 mb-4">
     <!-- Stok İstatistikleri -->
-    <div class="col-md-3">
-        <div class="card stats-card text-white">
-            <div class="card-body">
-                <i class="bi bi-box-seam fs-1 mb-2"></i>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-content">
                 <h3>{{ toplam_urun_sayisi }}</h3>
                 <p>Toplam Ürün</p>
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stats-card warning text-white">
-            <div class="card-body">
-                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
-                <h3>{{ dusuk_stoklu_urunler }}</h3>
-                <p>Düşük Stoklu Ürün</p>
+            <div class="stat-link">
+                <a href="{% url 'stok:index' %}"><i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card stats-card danger text-white">
-            <div class="card-body">
-                <i class="bi bi-x-circle fs-1 mb-2"></i>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-danger">
+            <div class="stat-icon">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="stat-content">
                 <h3>{{ stoksuz_urunler }}</h3>
                 <p>Stoksuz Ürün</p>
             </div>
+            <div class="stat-link">
+                <a href="{% url 'stok:index' %}?stok_durumu=stoksuz"><i class="bi bi-arrow-right"></i></a>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card stats-card success text-white">
-            <div class="card-body">
-                <i class="bi bi-currency-dollar fs-1 mb-2"></i>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stat-content">
                 <h3>{{ toplam_stok_degeri|floatformat:0|default:"0" }} ₺</h3>
-                <p>Toplam Stok Değeri</p>
+                <p>Stok Değeri</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Cari ve Fatura İstatistikleri -->
 <div class="row g-4 mb-4">
-    <!-- Cari İstatistikleri -->
-    <div class="col-md-3">
-        <div class="card stats-card info text-white">
-            <div class="card-body">
-                <i class="bi bi-people fs-1 mb-2"></i>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
                 <h3>{{ toplam_cari_sayisi }}</h3>
                 <p>Toplam Cari</p>
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stats-card text-white" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
-            <div class="card-body">
-                <i class="bi bi-person fs-1 mb-2"></i>
-                <h3>{{ musteri_sayisi }}</h3>
-                <p>Müşteri</p>
+            <div class="stat-link">
+                <a href="{% url 'cari:index' %}"><i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card stats-card info text-white">
-            <div class="card-body">
-                <i class="bi bi-building fs-1 mb-2"></i>
-                <h3>{{ tedarikci_sayisi }}</h3>
-                <p>Tedarikçi</p>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-cash-stack"></i>
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stats-card success text-white">
-            <div class="card-body">
-                <i class="bi bi-cash-stack fs-1 mb-2"></i>
+            <div class="stat-content">
                 <h3>{{ toplam_alacak|floatformat:2|default:"0" }} ₺</h3>
                 <p>Toplam Alacak</p>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row g-4 mb-4">
-    <!-- Fatura İstatistikleri -->
-    <div class="col-md-3">
-        <div class="card stats-card text-white">
-            <div class="card-body">
-                <i class="bi bi-receipt fs-1 mb-2"></i>
-                <h3>{{ toplam_fatura_sayisi }}</h3>
-                <p>Toplam Fatura</p>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-receipt"></i>
             </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card stats-card success text-white">
-            <div class="card-body">
-                <i class="bi bi-calendar-month fs-1 mb-2"></i>
+            <div class="stat-content">
                 <h3>{{ bu_ay_fatura }}</h3>
                 <p>Bu Ay Fatura</p>
             </div>
+            <div class="stat-link">
+                <a href="{% url 'fatura:index' %}"><i class="bi bi-arrow-right"></i></a>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card stats-card success text-white">
-            <div class="card-body">
-                <i class="bi bi-cash fs-1 mb-2"></i>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-cash"></i>
+            </div>
+            <div class="stat-content">
                 <h3>{{ bu_ay_ciro|floatformat:2|default:"0" }} ₺</h3>
                 <p>Bu Ay Ciro</p>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
-        <div class="card stats-card warning text-white">
-            <div class="card-body">
-                <i class="bi bi-clock-history fs-1 mb-2"></i>
-                <h3>{{ bekleyen_faturalar }}</h3>
-                <p>Bekleyen Faturalar</p>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Ek İstatistikler -->
+<!-- Satış Trendleri -->
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card stats-card success text-white">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-graph-up text-primary"></i> Son 6 Ay Satış Trendi</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active">Aylık</button>
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
-                <i class="bi bi-calendar-day fs-1 mb-2"></i>
-                <h3>{{ bugun_satis|floatformat:2|default:"0" }} ₺</h3>
-                <p>Bugünkü Satış</p>
+                <canvas id="satisGrafik" height="80"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stats-card info text-white">
-            <div class="card-body">
-                <i class="bi bi-calendar-week fs-1 mb-2"></i>
-                <h3>{{ bu_hafta_satis|floatformat:2|default:"0" }} ₺</h3>
-                <p>Bu Hafta Satış</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card text-white" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
-            <div class="card-body">
-                <i class="bi bi-calendar-month fs-1 mb-2"></i>
-                <h3>{{ gecen_ay_ciro|floatformat:2|default:"0" }} ₺</h3>
-                <p>Geçen Ay Ciro</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card danger text-white">
-            <div class="card-body">
-                <i class="bi bi-exclamation-circle fs-1 mb-2"></i>
-                <h3>{{ vadesi_yaklasan|length }}</h3>
-                <p>Vadesi Yaklaşan</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Grafikler -->
-<div class="row g-4 mb-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Son 6 Ay Satış Grafiği</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="satisGrafik" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Ürün Kategori Dağılımı</h5>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-pie-chart text-info"></i> Ürün Kategori Dağılımı</h5>
             </div>
             <div class="card-body">
                 <canvas id="kategoriGrafik"></canvas>
@@ -202,66 +154,136 @@
     </div>
 </div>
 
+<!-- Günlük/Haftalık Satışlar -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-primary">
+                <i class="bi bi-calendar-day"></i>
+            </div>
+            <div class="mini-stat-content">
+                <h4>{{ bugun_satis|floatformat:2|default:"0" }} ₺</h4>
+                <p>Bugünkü Satış</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-info">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+            <div class="mini-stat-content">
+                <h4>{{ bu_hafta_satis|floatformat:2|default:"0" }} ₺</h4>
+                <p>Bu Hafta Satış</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-success">
+                <i class="bi bi-calendar-month"></i>
+            </div>
+            <div class="mini-stat-content">
+                <h4>{{ gecen_ay_ciro|floatformat:2|default:"0" }} ₺</h4>
+                <p>Geçen Ay Ciro</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="mini-stat-content">
+                <h4>{{ bekleyen_faturalar }}</h4>
+                <p>Bekleyen Faturalar</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- En Çok Satan Ürünler ve Vadesi Yaklaşan Faturalar -->
 <div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-trophy"></i> Bu Ay En Çok Satan Ürünler</h5>
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-trophy text-warning"></i> Bu Ay En Çok Satan Ürünler</h5>
             </div>
             <div class="card-body">
                 {% if en_cok_satan_urunler %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Ürün</th>
-                                <th>Miktar</th>
-                                <th>Toplam</th>
+                                <th class="text-center">Miktar</th>
+                                <th class="text-end">Toplam</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for urun in en_cok_satan_urunler %}
                             <tr>
-                                <td>{{ urun.urun_adi }}</td>
-                                <td><span class="badge bg-primary">{{ urun.toplam_miktar }}</span></td>
-                                <td>{{ urun.toplam_tutar|floatformat:2 }} ₺</td>
+                                <td>
+                                    <strong>{{ urun.urun_adi }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">{{ urun.toplam_miktar }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ urun.toplam_tutar|floatformat:2 }} ₺</strong>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">Henüz satış verisi yok</p>
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Henüz satış verisi yok</p>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-calendar-x"></i> Vadesi Yaklaşan Faturalar (7 Gün)</h5>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-calendar-x text-danger"></i> Vadesi Yaklaşan Faturalar (7 Gün)</h5>
             </div>
             <div class="card-body">
                 {% if vadesi_yaklasan %}
                 <div class="list-group list-group-flush">
                     {% for fatura in vadesi_yaklasan %}
-                    <div class="list-group-item">
+                    <div class="list-group-item border-0 px-0">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong><a href="{% url 'fatura:detay' fatura.pk %}" class="text-decoration-none">{{ fatura.fatura_no }}</a></strong><br>
+                                <strong>
+                                    <a href="{% url 'fatura:detay' fatura.pk %}" class="text-decoration-none">
+                                        {{ fatura.fatura_no }}
+                                    </a>
+                                </strong>
+                                <br>
                                 <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-warning">{{ fatura.vade_tarihi|date:"d.m.Y" }}</span><br>
-                                <small class="text-muted">{{ fatura.genel_toplam|floatformat:2 }} ₺</small>
+                                <span class="badge bg-warning">{{ fatura.vade_tarihi|date:"d.m.Y" }}</span>
+                                <br>
+                                <small class="text-muted"><strong>{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></small>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">Vadesi yaklaşan fatura yok</p>
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle" style="font-size: 3rem; color: #28a745;"></i>
+                    <p class="text-muted mt-3">Vadesi yaklaşan fatura yok</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -269,47 +291,51 @@
 </div>
 
 <!-- Son Eklenenler -->
-<div class="row">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-box-seam"></i> Son Eklenen Ürünler</h5>
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-box-seam text-primary"></i> Son Eklenen Ürünler</h5>
             </div>
             <div class="card-body">
                 {% if son_urunler %}
                 <div class="list-group list-group-flush">
                     {% for urun in son_urunler %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between">
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>{{ urun.ad }}</strong><br>
+                                <strong>{{ urun.ad }}</strong>
+                                <br>
                                 <small class="text-muted">{{ urun.fiyat|floatformat:2 }} ₺</small>
                             </div>
-                            <span class="badge bg-success">{{ urun.mevcut_stok }}</span>
+                            <span class="badge {% if urun.mevcut_stok == 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ urun.mevcut_stok }}
+                            </span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">Henüz ürün eklenmemiş</p>
+                <p class="text-muted text-center py-3">Henüz ürün eklenmemiş</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-people"></i> Son Eklenen Cariler</h5>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-people text-info"></i> Son Eklenen Cariler</h5>
             </div>
             <div class="card-body">
                 {% if son_cariler %}
                 <div class="list-group list-group-flush">
                     {% for cari in son_cariler %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between">
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>{{ cari.ad_soyad }}</strong><br>
+                                <strong>{{ cari.ad_soyad }}</strong>
+                                <br>
                                 <small class="text-muted">{{ cari.get_kategori_display }}</small>
                             </div>
                             <span class="badge bg-info">{{ cari.telefon|default:"-" }}</span>
@@ -318,29 +344,35 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">Henüz cari eklenmemiş</p>
+                <p class="text-muted text-center py-3">Henüz cari eklenmemiş</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-receipt"></i> Son Faturalar</h5>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-receipt text-success"></i> Son Faturalar</h5>
             </div>
             <div class="card-body">
                 {% if son_faturalar %}
                 <div class="list-group list-group-flush">
                     {% for fatura in son_faturalar %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between">
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>{{ fatura.fatura_no }}</strong><br>
+                                <strong>
+                                    <a href="{% url 'fatura:detay' fatura.pk %}" class="text-decoration-none">
+                                        {{ fatura.fatura_no }}
+                                    </a>
+                                </strong>
+                                <br>
                                 <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-success">{{ fatura.genel_toplam|floatformat:2 }} ₺</span><br>
+                                <span class="badge bg-success">{{ fatura.genel_toplam|floatformat:2 }} ₺</span>
+                                <br>
                                 <small class="text-muted">{{ fatura.fatura_tarihi|date:"d.m.Y" }}</small>
                             </div>
                         </div>
@@ -348,7 +380,7 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted">Henüz fatura oluşturulmamış</p>
+                <p class="text-muted text-center py-3">Henüz fatura oluşturulmamış</p>
                 {% endif %}
             </div>
         </div>
@@ -357,8 +389,172 @@
 {% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .welcome-banner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px 30px;
+        border-radius: 15px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        transition: width 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card:hover::before {
+        width: 100%;
+        opacity: 0.1;
+    }
+
+    .stat-primary::before { background: #667eea; }
+    .stat-success::before { background: #28a745; }
+    .stat-warning::before { background: #ffc107; }
+    .stat-danger::before { background: #dc3545; }
+    .stat-info::before { background: #17a2b8; }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .stat-primary .stat-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-success .stat-icon { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .stat-warning .stat-icon { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
+    .stat-danger .stat-icon { background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%); }
+    .stat-info .stat-icon { background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%); }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-content h3 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .stat-content p {
+        margin: 5px 0 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .stat-link {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .stat-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 1.2rem;
+    }
+
+    .stat-card:hover .stat-link {
+        background: #667eea;
+    }
+
+    .stat-card:hover .stat-link a {
+        color: white;
+    }
+
+    .mini-stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s;
+    }
+
+    .mini-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+
+    .mini-stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .mini-stat-content h4 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .mini-stat-content p {
+        margin: 3px 0 0;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+
+    @media (max-width: 768px) {
+        .stat-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -370,38 +566,67 @@ document.addEventListener('DOMContentLoaded', function() {
         const satisData = {{ son_6_ay_satis|safe }};
         if (satisData && satisData.length > 0) {
             new Chart(satisCtx, {
-            type: 'line',
-            data: {
-                labels: satisData.map(item => item.ay_adi),
-                datasets: [{
-                    label: 'Satış (₺)',
-                    data: satisData.map(item => item.satis),
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true
-                    }
+                type: 'line',
+                data: {
+                    labels: satisData.map(item => item.ay_adi),
+                    datasets: [{
+                        label: 'Satış (₺)',
+                        data: satisData.map(item => item.satis),
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: 'rgb(102, 126, 234)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('tr-TR') + ' ₺';
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('tr-TR') + ' ₺';
+                                },
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                display: false
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
     }
     
     // Kategori Dağılım Grafiği
@@ -412,14 +637,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const labels = Object.keys(kategoriData);
             const data = Object.values(kategoriData);
             const colors = [
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(153, 102, 255, 0.8)',
-                'rgba(255, 159, 64, 0.8)',
-                'rgba(199, 199, 199, 0.8)',
-                'rgba(83, 102, 255, 0.8)'
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(108, 117, 125, 0.8)',
+                'rgba(255, 87, 34, 0.8)',
+                'rgba(156, 39, 176, 0.8)'
             ];
             
             new Chart(kategoriCtx, {
@@ -429,7 +654,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     datasets: [{
                         data: data,
                         backgroundColor: colors.slice(0, labels.length),
-                        borderWidth: 2
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
                 },
                 options: {
@@ -437,13 +663,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     maintainAspectRatio: true,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
                         }
                     }
                 }
             });
-        } else {
-            console.warn('Kategori verisi bulunamadı');
         }
     }
 });

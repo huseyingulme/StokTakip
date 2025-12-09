@@ -20,7 +20,7 @@ def dashboard(request):
     
     # Stok istatistikleri
     toplam_urun_sayisi = Urun.objects.count()
-    dusuk_stoklu_urunler = sum(1 for u in Urun.objects.all() if u.mevcut_stok < u.min_stok_adedi)
+    dusuk_stoklu_urunler = 0  # Min stok her zaman 0 olduğu için düşük stok uyarısı yok
     stoksuz_urunler = sum(1 for u in Urun.objects.all() if u.mevcut_stok == 0)
     toplam_stok_degeri = sum(urun.fiyat * urun.mevcut_stok for urun in Urun.objects.all())
     

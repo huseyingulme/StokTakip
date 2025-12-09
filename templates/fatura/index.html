@@ -17,13 +17,16 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="get" class="mb-3">
-            <div class="row g-2">
-                <div class="col-md-6">
+        <!-- Gelişmiş Filtreleme -->
+        <form method="get" class="mb-4">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Arama</label>
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Fatura no veya cari adı ile ara..." value="{{ search_query }}">
+                           placeholder="Fatura no, cari adı..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label">Fatura Tipi</label>
                     <select name="tip" class="form-select">
                         <option value="">Tümü</option>
                         <option value="Alis" {% if tip_filter == 'Alis' %}selected{% endif %}>Alış</option>
@@ -31,6 +34,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label">Durum</label>
                     <select name="durum" class="form-select">
                         <option value="">Tüm Durumlar</option>
                         <option value="Beklemede" {% if durum_filter == 'Beklemede' %}selected{% endif %}>Beklemede</option>
@@ -39,9 +43,30 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Ara
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="tarih_baslangic" class="form-control" value="{{ tarih_baslangic }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="tarih_bitis" class="form-control" value="{{ tarih_bitis }}">
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Min Tutar (₺)</label>
+                    <input type="number" name="tutar_min" class="form-control" step="0.01" value="{{ tutar_min }}" placeholder="0.00">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Max Tutar (₺)</label>
+                    <input type="number" name="tutar_max" class="form-control" step="0.01" value="{{ tutar_max }}" placeholder="0.00">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-search"></i> Filtrele
                     </button>
+                    <a href="{% url 'fatura:index' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Temizle
+                    </a>
                 </div>
             </div>
         </form>

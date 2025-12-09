@@ -24,7 +24,7 @@ class Urun(models.Model):
     barkod = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name="Barkod")
     birim = models.CharField(max_length=20, default='Adet', verbose_name="Birim")
     fiyat = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Satış Fiyatı")
-    min_stok_adedi = models.IntegerField(default=0, verbose_name="Minimum Stok Seviyesi")
+    min_stok_adedi = models.IntegerField(default=0, verbose_name="Minimum Stok Seviyesi", editable=False)
     olusturma_tarihi = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturma Tarihi")
 
     class Meta:
@@ -35,6 +35,11 @@ class Urun(models.Model):
 
     def __str__(self):
         return self.ad
+    
+    def save(self, *args, **kwargs):
+        # Minimum stok seviyesi her zaman 0 olacak
+        self.min_stok_adedi = 0
+        super().save(*args, **kwargs)
 
     @property
     def mevcut_stok(self):

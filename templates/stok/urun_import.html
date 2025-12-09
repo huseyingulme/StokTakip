@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Ürün Import{% endblock %}
+{% block page_title %}Ürün Import - CSV Dosyası Yükle{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-upload"></i> CSV Dosyası ile Ürün Import</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <h6><i class="bi bi-info-circle"></i> CSV Formatı</h6>
+            <p class="mb-2">CSV dosyanız aşağıdaki sütunları içermelidir:</p>
+            <ul class="mb-0">
+                <li><strong>ad</strong> (Zorunlu) - Ürün adı</li>
+                <li><strong>barkod</strong> (Opsiyonel) - Ürün barkodu</li>
+                <li><strong>kategori</strong> (Opsiyonel) - Kategori adı (yoksa oluşturulur)</li>
+                <li><strong>birim</strong> (Opsiyonel) - Birim (varsayılan: Adet)</li>
+                <li><strong>fiyat</strong> (Opsiyonel) - Satış fiyatı (varsayılan: 0)</li>
+                <li><strong>stok_miktari</strong> (Opsiyonel) - Başlangıç stok miktarı</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-warning">
+            <h6><i class="bi bi-exclamation-triangle"></i> Önemli Notlar</h6>
+            <ul class="mb-0">
+                <li>CSV dosyası UTF-8 kodlamalı olmalıdır</li>
+                <li>İlk satır sütun başlıkları olmalıdır</li>
+                <li>Aynı barkod ile ürün varsa güncellenir, yoksa yeni oluşturulur</li>
+                <li>Stok miktarı belirtilirse otomatik stok hareketi oluşturulur</li>
+            </ul>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="import_file" class="form-label">CSV Dosyası Seç</label>
+                <input type="file" class="form-control" id="import_file" name="import_file" accept=".csv" required>
+                <small class="form-text text-muted">Sadece CSV dosyaları kabul edilir</small>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload"></i> Import Et
+                </button>
+                <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+            </div>
+        </form>
+
+        <hr class="my-4">
+
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="mb-0">Örnek CSV Dosyası</h6>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0">ad,barkod,kategori,birim,fiyat,stok_miktari
+Ürün 1,1234567890,Elektronik,Adet,100.50,50
+Ürün 2,0987654321,Ev Eşyası,Adet,250.00,25
+Ürün 3,,Giyim,Adet,75.25,100</pre>
+                <a href="data:text/csv;charset=utf-8,ad,barkod,kategori,birim,fiyat,stok_miktari%0AÜrün 1,1234567890,Elektronik,Adet,100.50,50%0AÜrün 2,0987654321,Ev Eşyası,Adet,250.00,25%0AÜrün 3,,Giyim,Adet,75.25,100" 
+                   download="ornek_urun_import.csv" 
+                   class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="bi bi-download"></i> Örnek CSV İndir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

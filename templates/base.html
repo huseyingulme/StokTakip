@@ -86,8 +86,13 @@
           </a>
         </li>
         <li>
-          <a href="{% url 'butce:index' %}" class="menu-item">
-            <i class="bi bi-piggy-bank"></i> <span>Bütçe Yönetimi</span>
+          <a href="{% url 'kullanici_yonetimi:index' %}" class="menu-item">
+            <i class="bi bi-people"></i> <span>Kullanıcı Yönetimi</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'accounts:audit_log' %}" class="menu-item">
+            <i class="bi bi-journal-text"></i> <span>Sistem Kayıtları</span>
           </a>
         </li>
       </ul>
@@ -95,14 +100,29 @@
         <div class="user-info">
           <i class="bi bi-person-circle"></i> <span>{{ user.username }}</span>
         </div>
-        <a href="{% url 'logout' %}" class="logout-btn">
-          <i class="bi bi-box-arrow-right"></i> Çıkış
-        </a>
+        <div class="d-flex flex-column gap-2">
+          <a href="{% url 'accounts:profile' %}" class="profile-btn">
+            <i class="bi bi-person-gear"></i> Profil
+          </a>
+          <a href="{% url 'logout' %}" class="logout-btn">
+            <i class="bi bi-box-arrow-right"></i> Çıkış
+          </a>
+        </div>
       </div>
     </nav>
     <div class="main-content">
       <div class="topbar">
-        <h5 class="page-title">{% block page_title %}Ana Sayfa{% endblock %}</h5>
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="page-title mb-0">{% block page_title %}Ana Sayfa{% endblock %}</h5>
+          <div class="d-flex gap-2">
+            <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-primary" title="Profil">
+              <i class="bi bi-person-circle"></i>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger" title="Çıkış">
+              <i class="bi bi-box-arrow-right"></i>
+            </a>
+          </div>
+        </div>
       </div>
       <div class="content-area">
         {% if messages %}

@@ -16,7 +16,7 @@ urlpatterns = [
     path('raporlar/', include('raporlar.urls')),
     path('masraf/', include('masraf.urls')),
     path('finans/', include('finans.urls')),
-    path('butce/', include('butce.urls')),
+    path('kullanici-yonetimi/', include('kullanici_yonetimi.urls')),
     path('api/', include('api.urls')),
     path('', views.home, name='home'),
 ]
@@ -28,5 +28,3 @@ handler500 = views.handler500
 # Media files (sadece development için)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    # STATIC_ROOT sadece production'da kullanılır, development'ta STATICFILES_DIRS kullanılır
-    # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

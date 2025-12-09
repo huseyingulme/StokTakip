@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcı Yönetimi{% endblock %}
+{% block page_title %}<i class="bi bi-people"></i> Kullanıcı Yönetimi{% endblock %}
+
+{% block content %}
+<!-- Filtreleme -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="tarih_baslangic" class="form-label">Başlangıç Tarihi</label>
+                <input type="date" name="tarih_baslangic" id="tarih_baslangic" class="form-control" 
+                       value="{{ tarih_baslangic }}">
+            </div>
+            <div class="col-md-4">
+                <label for="tarih_bitis" class="form-label">Bitiş Tarihi</label>
+                <input type="date" name="tarih_bitis" id="tarih_bitis" class="form-control" 
+                       value="{{ tarih_bitis }}">
+            </div>
+            <div class="col-md-3">
+                <label for="siralama" class="form-label">Sıralama</label>
+                <select name="siralama" id="siralama" class="form-select">
+                    <option value="toplam_satis" {% if siralama == 'toplam_satis' %}selected{% endif %}>Toplam Satış</option>
+                    <option value="fatura_sayisi" {% if siralama == 'fatura_sayisi' %}selected{% endif %}>Fatura Sayısı</option>
+                    <option value="ortalama_fatura" {% if siralama == 'ortalama_fatura' %}selected{% endif %}>Ortalama Fatura</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrele
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Kullanıcı İstatistikleri -->
+<div class="row g-4 mb-4">
+    {% for istatistik in kullanici_istatistikleri %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-circle"></i> {{ istatistik.kullanici.get_full_name|default:istatistik.kullanici.username }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <small class="text-muted">Toplam Satış</small>
+                        <h5 class="mb-0 text-primary">{{ istatistik.toplam_satis|floatformat:2 }} ₺</h5>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Fatura Sayısı</small>
+                        <h5 class="mb-0">{{ istatistik.fatura_sayisi }}</h5>
+                    </div>
+                </div>
+                <hr>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <small class="text-muted">Toplam Ürün</small>
+                        <h6 class="mb-0">{{ istatistik.toplam_urun_adedi }}</h6>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Ortalama Fatura</small>
+                        <h6 class="mb-0">{{ istatistik.ortalama_fatura|floatformat:2 }} ₺</h6>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <small class="text-muted">Bu Ay Satış</small>
+                        <h6 class="mb-0 text-success">{{ istatistik.bu_ay_satis|floatformat:2 }} ₺</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{% url 'kullanici_yonetimi:kullanici_detay' istatistik.kullanici.id %}" 
+                   class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-eye"></i> Detaylı Görüntüle
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> Henüz kullanıcı bulunmamaktadır.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toplam İstatistikler -->
+<div class="row g-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Genel İstatistikler</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ kullanici_istatistikleri|length }}</h4>
+                        <small class="text-muted">Aktif Kullanıcı</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ toplam_satis_genel|floatformat:2 }} ₺</h4>
+                        <small class="text-muted">Toplam Satış</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ toplam_fatura_genel }}</h4>
+                        <small class="text-muted">Toplam Fatura</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ ortalama_satis_genel|floatformat:2 }} ₺</h4>
+                        <small class="text-muted">Ortalama Satış</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

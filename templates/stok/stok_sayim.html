@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Stok Sayımı{% endblock %}
+{% block page_title %}<i class="bi bi-clipboard-check"></i> Stok Sayımı{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Stok Sayımı</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Nasıl Çalışır?</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Fiziksel stok sayımınızı "Gerçek Miktar" sütununa girin</li>
+                        <li>Sistem mevcut stok ile karşılaştırır</li>
+                        <li>Fark bulunan ürünler için otomatik stok hareketi oluşturulur</li>
+                        <li>Sadece fark olan ürünler işleme alınır</li>
+                    </ul>
+                </div>
+
+                <form method="post" id="sayimForm">
+                    {% csrf_token %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="bi bi-box-seam"></i> Ürünler 
+                            <span class="badge bg-info">{{ urunler.count }}</span>
+                        </h6>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillCurrentStock()">
+                                <i class="bi bi-arrow-clockwise"></i> Mevcut Stokları Doldur
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAll()">
+                                <i class="bi bi-x-square"></i> Temizle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Ürün Adı</th>
+                                    <th>Kategori</th>
+                                    <th>Barkod</th>
+                                    <th class="text-end">Mevcut Stok</th>
+                                    <th class="text-end" style="min-width: 150px;">Gerçek Miktar</th>
+                                    <th class="text-center">Fark</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for urun in urunler %}
+                                <tr data-urun-id="{{ urun.pk }}" data-mevcut-stok="{{ urun.mevcut_stok }}">
+                                    <td>
+                                        <strong>{{ urun.ad }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ urun.kategori.ad|default:"Kategorisiz" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ urun.barkod|default:"-" }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge {% if urun.mevcut_stok == 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ urun.mevcut_stok }} {{ urun.birim }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small>-</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <input type="number" 
+                                               name="urun_{{ urun.pk }}_miktar" 
+                                               class="form-control form-control-sm gercek-miktar-input" 
+                                               min="0" 
+                                               step="1"
+                                               placeholder="Sayım miktarı"
+                                               onchange="calculateDifference(this)"
+                                               oninput="calculateDifference(this)"
+                                               style="width: 120px; display: inline-block;">
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fark-badge" id="fark_{{ urun.pk }}">-</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                        <p class="mt-2">Henüz ürün eklenmemiş</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-1">Toplam Ürün</h6>
+                                    <h4 class="mb-0">{{ urunler.count }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-1">Sayım Yapılan</h6>
+                                    <h4 class="mb-0" id="sayimYapilan">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-1">Fark Bulunan</h6>
+                                    <h4 class="mb-0" id="farkBulunan">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Uyarı:</strong> Sayım tamamlandığında, fark bulunan ürünler için otomatik stok hareketi oluşturulacaktır.
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Sayımı Tamamla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculateDifference(input) {
+    const row = input.closest('tr');
+    const urunId = row.dataset.urunId;
+    const mevcutStok = parseInt(row.dataset.mevcutStok) || 0;
+    const gercekMiktar = parseInt(input.value) || 0;
+    const fark = gercekMiktar - mevcutStok;
+    
+    const farkBadge = document.getElementById('fark_' + urunId);
+    
+    if (input.value === '' || input.value === null) {
+        farkBadge.textContent = '-';
+        farkBadge.className = 'fark-badge';
+    } else {
+        farkBadge.textContent = (fark > 0 ? '+' : '') + fark;
+        if (fark > 0) {
+            farkBadge.className = 'badge bg-success fark-badge';
+        } else if (fark < 0) {
+            farkBadge.className = 'badge bg-danger fark-badge';
+        } else {
+            farkBadge.className = 'badge bg-secondary fark-badge';
+        }
+    }
+    
+    updateStatistics();
+}
+
+function updateStatistics() {
+    const inputs = document.querySelectorAll('.gercek-miktar-input');
+    let sayimYapilan = 0;
+    let farkBulunan = 0;
+    
+    inputs.forEach(input => {
+        if (input.value && input.value !== '') {
+            sayimYapilan++;
+            const row = input.closest('tr');
+            const mevcutStok = parseInt(row.dataset.mevcutStok) || 0;
+            const gercekMiktar = parseInt(input.value) || 0;
+            if (gercekMiktar !== mevcutStok) {
+                farkBulunan++;
+            }
+        }
+    });
+    
+    document.getElementById('sayimYapilan').textContent = sayimYapilan;
+    document.getElementById('farkBulunan').textContent = farkBulunan;
+}
+
+function fillCurrentStock() {
+    const inputs = document.querySelectorAll('.gercek-miktar-input');
+    inputs.forEach(input => {
+        const row = input.closest('tr');
+        const mevcutStok = parseInt(row.dataset.mevcutStok) || 0;
+        input.value = mevcutStok;
+        calculateDifference(input);
+    });
+}
+
+function clearAll() {
+    if (confirm('Tüm sayım verilerini temizlemek istediğinize emin misiniz?')) {
+        const inputs = document.querySelectorAll('.gercek-miktar-input');
+        inputs.forEach(input => {
+            input.value = '';
+            calculateDifference(input);
+        });
+    }
+}
+
+// Form gönderilmeden önce kontrol
+document.getElementById('sayimForm').addEventListener('submit', function(e) {
+    const inputs = document.querySelectorAll('.gercek-miktar-input');
+    let doluInputSayisi = 0;
+    
+    inputs.forEach(input => {
+        if (input.value && input.value !== '') {
+            doluInputSayisi++;
+        }
+    });
+    
+    if (doluInputSayisi === 0) {
+        e.preventDefault();
+        alert('Lütfen en az bir ürün için sayım miktarı girin!');
+        return false;
+    }
+    
+    const confirmed = confirm('Stok sayımını tamamlamak istediğinize emin misiniz? Fark bulunan ürünler için otomatik stok hareketi oluşturulacaktır.');
+    if (!confirmed) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Sayfa yüklendiğinde istatistikleri güncelle
+updateStatistics();
+</script>
+{% endblock %}
+

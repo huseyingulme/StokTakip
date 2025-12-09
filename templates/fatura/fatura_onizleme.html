@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Fatura Önizleme - {{ fatura.fatura_no }}{% endblock %}
+{% block page_title %}Fatura Önizleme - {{ fatura.fatura_no }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ fatura.get_fatura_tipi_display }} FATURASI</h5>
+        <div>
+            <a href="{% url 'fatura:pdf' fatura.pk %}" class="btn btn-sm btn-info">
+                <i class="bi bi-file-pdf"></i> PDF İndir
+            </a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary">
+                <i class="bi bi-printer"></i> Yazdır
+            </button>
+            <a href="{% url 'fatura:detay' fatura.pk %}" class="btn btn-sm btn-secondary">
+                <i class="bi bi-arrow-left"></i> Geri
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="text-muted">Fatura Bilgileri</h6>
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <th style="width: 40%;">Fatura No:</th>
+                        <td>{{ fatura.fatura_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fatura Tarihi:</th>
+                        <td>{{ fatura.fatura_tarihi|date:"d.m.Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Vade Tarihi:</th>
+                        <td>{{ fatura.vade_tarihi|date:"d.m.Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Durum:</th>
+                        <td>
+                            <span class="badge 
+                                {% if fatura.durum == 'Odendi' %}bg-success
+                                {% elif fatura.durum == 'Iptal' %}bg-danger
+                                {% else %}bg-warning{% endif %}">
+                                {{ fatura.get_durum_display }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Cari Bilgileri</h6>
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <th style="width: 40%;">Cari:</th>
+                        <td>{{ fatura.cari.ad_soyad|default:"-" }}</td>
+                    </tr>
+                    {% if fatura.cari %}
+                    <tr>
+                        <th>Vergi No:</th>
+                        <td>{{ fatura.cari.vergi_no|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Adres:</th>
+                        <td>{{ fatura.cari.adres|default:"-" }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered">
+                <thead class="table-primary">
+                    <tr>
+                        <th style="width: 5%;">Sıra</th>
+                        <th style="width: 35%;">Ürün Adı</th>
+                        <th style="width: 10%;" class="text-center">Miktar</th>
+                        <th style="width: 15%;" class="text-end">Birim Fiyat</th>
+                        <th style="width: 10%;" class="text-center">KDV %</th>
+                        <th style="width: 15%;" class="text-end">KDV Tutarı</th>
+                        <th style="width: 15%;" class="text-end">Toplam</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kalem in kalemler %}
+                    <tr>
+                        <td>{{ kalem.sira_no }}</td>
+                        <td>{{ kalem.urun_adi }}</td>
+                        <td class="text-center">{{ kalem.miktar }}</td>
+                        <td class="text-end">{{ kalem.birim_fiyat|floatformat:2 }} ₺</td>
+                        <td class="text-center">{{ kalem.kdv_orani }}%</td>
+                        <td class="text-end">{{ kalem.kdv_tutari|floatformat:2 }} ₺</td>
+                        <td class="text-end"><strong>{{ kalem.toplam_tutar|floatformat:2 }} ₺</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">Henüz kalem eklenmemiş.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>Ara Toplam (KDV Hariç):</strong></td>
+                        <td colspan="2" class="text-end"><strong>{{ fatura.toplam_tutar|floatformat:2 }} ₺</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>KDV Tutarı:</strong></td>
+                        <td colspan="2" class="text-end"><strong>{{ fatura.kdv_tutari|floatformat:2 }} ₺</strong></td>
+                    </tr>
+                    {% if fatura.iskonto_tutari > 0 %}
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>İskonto (%{{ fatura.iskonto_orani }}):</strong></td>
+                        <td colspan="2" class="text-end text-danger"><strong>-{{ fatura.iskonto_tutari|floatformat:2 }} ₺</strong></td>
+                    </tr>
+                    {% endif %}
+                    <tr class="table-primary">
+                        <td colspan="5" class="text-end"><strong>GENEL TOPLAM:</strong></td>
+                        <td colspan="2" class="text-end"><strong style="font-size: 1.2em;">{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        {% if fatura.aciklama %}
+        <div class="mb-3">
+            <h6>Açıklama:</h6>
+            <p class="text-muted">{{ fatura.aciklama }}</p>
+        </div>
+        {% endif %}
+
+        <div class="text-muted small">
+            <p class="mb-0">Oluşturulma: {{ fatura.olusturma_tarihi|date:"d.m.Y H:i" }}</p>
+            {% if fatura.olusturan %}
+            <p class="mb-0">Oluşturan: {{ fatura.olusturan.get_full_name|default:fatura.olusturan.username }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .card-header .btn,
+        .card-header a {
+            display: none !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}
+

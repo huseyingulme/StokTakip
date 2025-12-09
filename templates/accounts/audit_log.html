@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Audit Log - Sistem Kayıtları{% endblock %}
+{% block page_title %}Audit Log - Sistem Kayıtları{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Sistem Kayıtları (Audit Log)</h5>
+        <div>
+            <a href="{% url 'raporlar:dashboard' %}" class="btn btn-sm btn-secondary">
+                <i class="bi bi-arrow-left"></i> Geri
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Filtreler -->
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Arama</label>
+                    <input type="text" class="form-control" name="search" value="{{ search_query }}" 
+                           placeholder="Açıklama, model, kullanıcı...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">İşlem Türü</label>
+                    <select class="form-select" name="action">
+                        <option value="">Tümü</option>
+                        {% for value, label in action_choices %}
+                        <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Kullanıcı</label>
+                    <select class="form-select" name="user">
+                        <option value="">Tümü</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if user_filter == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" class="form-control" name="tarih_baslangic" value="{{ tarih_baslangic }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" class="form-control" name="tarih_bitis" value="{{ tarih_bitis }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrele
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Log Listesi -->
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 10%;">Tarih/Saat</th>
+                        <th style="width: 10%;">Kullanıcı</th>
+                        <th style="width: 10%;">İşlem</th>
+                        <th style="width: 15%;">Model</th>
+                        <th style="width: 45%;">Açıklama</th>
+                        <th style="width: 10%;">IP Adresi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <small>{{ log.timestamp|date:"d.m.Y" }}<br>{{ log.timestamp|date:"H:i:s" }}</small>
+                        </td>
+                        <td>
+                            {% if log.user %}
+                            <span class="badge bg-info">{{ log.user.username }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if log.action == 'create' %}bg-success
+                                {% elif log.action == 'update' %}bg-warning
+                                {% elif log.action == 'delete' %}bg-danger
+                                {% elif log.action == 'view' %}bg-primary
+                                {% elif log.action == 'export' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <small>{{ log.model_name|default:"-" }}</small>
+                        </td>
+                        <td>
+                            <small>{{ log.description|truncatewords:15 }}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ log.ip_address|default:"-" }}</small>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox"></i> Kayıt bulunamadı
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sayfalama -->
+        {% if logs.has_other_pages %}
+        <nav aria-label="Sayfa navigasyonu">
+            <ul class="pagination justify-content-center mt-4">
+                {% if logs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if tarih_baslangic %}&tarih_baslangic={{ tarih_baslangic }}{% endif %}{% if tarih_bitis %}&tarih_bitis={{ tarih_bitis }}{% endif %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if tarih_baslangic %}&tarih_baslangic={{ tarih_baslangic }}{% endif %}{% if tarih_bitis %}&tarih_bitis={{ tarih_bitis }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Sayfa {{ logs.number }} / {{ logs.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if tarih_baslangic %}&tarih_baslangic={{ tarih_baslangic }}{% endif %}{% if tarih_bitis %}&tarih_bitis={{ tarih_bitis }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if tarih_baslangic %}&tarih_baslangic={{ tarih_baslangic }}{% endif %}{% if tarih_bitis %}&tarih_bitis={{ tarih_bitis }}{% endif %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

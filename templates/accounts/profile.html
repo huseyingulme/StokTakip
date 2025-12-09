@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Profil{% endblock %}
+{% block page_title %}Kullanıcı Profili{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> Kullanıcı Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Kullanıcı Adı:</strong></div>
+                    <div class="col-md-8">{{ user.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Ad:</strong></div>
+                    <div class="col-md-8">{{ user.first_name|default:"-" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Soyad:</strong></div>
+                    <div class="col-md-8">{{ user.last_name|default:"-" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>E-posta:</strong></div>
+                    <div class="col-md-8">{{ user.email|default:"-" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Son Giriş:</strong></div>
+                    <div class="col-md-8">{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Üyelik Tarihi:</strong></div>
+                    <div class="col-md-8">{{ user.date_joined|date:"d.m.Y H:i" }}</div>
+                </div>
+                {% if profile.telefon %}
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Telefon:</strong></div>
+                    <div class="col-md-8">{{ profile.telefon }}</div>
+                </div>
+                {% endif %}
+                {% if profile.pozisyon %}
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Pozisyon:</strong></div>
+                    <div class="col-md-8">{{ profile.pozisyon }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> İşlemler</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'accounts:password_change' %}" class="btn btn-warning">
+                        <i class="bi bi-key"></i> Şifre Değiştir
+                    </a>
+                    <a href="{% url 'raporlar:dashboard' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Dashboard'a Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

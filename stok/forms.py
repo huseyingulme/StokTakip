@@ -19,14 +19,13 @@ class KategoriForm(forms.ModelForm):
 class UrunForm(forms.ModelForm):
     class Meta:
         model = Urun
-        fields = ['ad', 'kategori', 'barkod', 'birim', 'fiyat', 'min_stok_adedi']
+        fields = ['ad', 'kategori', 'barkod', 'birim', 'fiyat']
         widgets = {
             'ad': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ürün adı giriniz'}),
             'kategori': forms.Select(attrs={'class': 'form-control'}),
             'barkod': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Barkod numarası'}),
             'birim': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Adet, Kg, Lt vb.'}),
             'fiyat': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-            'min_stok_adedi': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
         }
         labels = {
             'ad': 'Ürün Adı',
@@ -34,7 +33,6 @@ class UrunForm(forms.ModelForm):
             'barkod': 'Barkod',
             'birim': 'Birim',
             'fiyat': 'Satış Fiyatı (₺)',
-            'min_stok_adedi': 'Minimum Stok Seviyesi',
         }
 
 

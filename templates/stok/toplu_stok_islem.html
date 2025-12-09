@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Toplu Stok İşlemi{% endblock %}
+{% block page_title %}<i class="bi bi-list-check"></i> Toplu Stok İşlemi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Toplu Stok İşlemi</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Birden fazla ürün için aynı anda stok giriş veya çıkış işlemi yapabilirsiniz. 
+                    İşlem yapmak istediğiniz ürünleri seçin ve işlem detaylarını girin.
+                </p>
+
+                <form method="post" id="topluIslemForm">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="islem_turu" class="form-label">
+                                <i class="bi bi-arrow-left-right"></i> İşlem Türü <span class="text-danger">*</span>
+                            </label>
+                            <select name="islem_turu" id="islem_turu" class="form-select" required>
+                                <option value="">Seçiniz...</option>
+                                <option value="giriş">Stok Girişi</option>
+                                <option value="çıkış">Stok Çıkışı</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="miktar" class="form-label">
+                                <i class="bi bi-123"></i> Miktar <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" name="miktar" id="miktar" class="form-control" 
+                                   min="1" required placeholder="Miktar giriniz">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="aciklama" class="form-label">
+                            <i class="bi bi-card-text"></i> Açıklama
+                        </label>
+                        <textarea name="aciklama" id="aciklama" class="form-control" rows="3" 
+                                  placeholder="İşlem açıklaması (opsiyonel)">Toplu işlem</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="bi bi-box-seam"></i> Ürünler 
+                            <span class="badge bg-primary" id="seciliUrunSayisi">0</span>
+                        </h6>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                                <i class="bi bi-check-all"></i> Tümünü Seç
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">
+                                <i class="bi bi-x-square"></i> Seçimi Temizle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleAll(this)">
+                                    </th>
+                                    <th>Ürün Adı</th>
+                                    <th>Kategori</th>
+                                    <th>Barkod</th>
+                                    <th class="text-end">Mevcut Stok</th>
+                                    <th class="text-end">Min. Stok</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for urun in urunler %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="urun_ids" value="{{ urun.pk }}" 
+                                               class="urun-checkbox" onchange="updateSelectedCount()">
+                                    </td>
+                                    <td>
+                                        <strong>{{ urun.ad }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ urun.kategori.ad|default:"Kategorisiz" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ urun.barkod|default:"-" }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge {% if urun.mevcut_stok == 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ urun.mevcut_stok }} {{ urun.birim }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small>-</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                        <p class="mt-2">Henüz ürün eklenmemiş</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Bilgi:</strong> Seçili ürünler için belirtilen miktarda stok giriş/çıkış işlemi yapılacaktır.
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="bi bi-check-circle"></i> İşlemi Uygula
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.urun-checkbox:checked');
+    const count = checkboxes.length;
+    document.getElementById('seciliUrunSayisi').textContent = count;
+    document.getElementById('submitBtn').disabled = count === 0;
+}
+
+function toggleAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.urun-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateSelectedCount();
+}
+
+function selectAll() {
+    document.querySelectorAll('.urun-checkbox').forEach(cb => cb.checked = true);
+    document.getElementById('selectAllCheckbox').checked = true;
+    updateSelectedCount();
+}
+
+function deselectAll() {
+    document.querySelectorAll('.urun-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateSelectedCount();
+}
+
+// Form gönderilmeden önce kontrol
+document.getElementById('topluIslemForm').addEventListener('submit', function(e) {
+    const selectedCount = document.querySelectorAll('.urun-checkbox:checked').length;
+    const islemTuru = document.getElementById('islem_turu').value;
+    const miktar = document.getElementById('miktar').value;
+    
+    if (selectedCount === 0) {
+        e.preventDefault();
+        alert('Lütfen en az bir ürün seçin!');
+        return false;
+    }
+    
+    if (!islemTuru) {
+        e.preventDefault();
+        alert('Lütfen işlem türü seçin!');
+        return false;
+    }
+    
+    if (!miktar || miktar <= 0) {
+        e.preventDefault();
+        alert('Lütfen geçerli bir miktar girin!');
+        return false;
+    }
+    
+    if (islemTuru === 'çıkış') {
+        const confirmed = confirm(`${selectedCount} ürün için ${miktar} adet stok çıkışı yapılacak. Emin misiniz?`);
+        if (!confirmed) {
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+
+// İlk yüklemede sayıyı güncelle
+updateSelectedCount();
+</script>
+{% endblock %}
+

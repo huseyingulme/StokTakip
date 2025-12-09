@@ -281,8 +281,10 @@ def cari_ekstre_pdf(request, pk):
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
     from django.http import HttpResponse
     from accounts.utils import log_action
+    from io import BytesIO
     
     cari = get_object_or_404(Cari, pk=pk)
     
@@ -334,69 +336,112 @@ def cari_ekstre_pdf(request, pk):
     
     kapanis_bakiye = bakiye
     
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Cari_Ekstre_{cari.ad_soyad}_{tarih_baslangic}_{tarih_bitis}.pdf"'
-    
-    doc = SimpleDocTemplate(response, pagesize=A4)
+    # Buffer kullan
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=30, leftMargin=30,
+                           topMargin=30, bottomMargin=30)
     elements = []
     styles = getSampleStyleSheet()
     
+    # Başlık stili
     title_style = ParagraphStyle(
         'Title',
         parent=styles['Heading1'],
-        fontSize=18,
+        fontSize=20,
         textColor=colors.HexColor('#1a1a1a'),
-        spaceAfter=20,
-        alignment=1
+        spaceAfter=25,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
     )
     
-    elements.append(Paragraph(f'CARİ EKSTRE RAPORU', title_style))
+    elements.append(Paragraph('CARİ EKSTRE RAPORU', title_style))
     elements.append(Spacer(1, 0.2*inch))
     
+    # Bilgi tablosu
     info_data = [
-        ['Cari:', cari.ad_soyad],
-        ['Tarih Aralığı:', f'{tarih_baslangic} - {tarih_bitis}'],
-        ['Açılış Bakiyesi:', f'{acilis_bakiye:,.2f} ₺'],
-        ['Kapanış Bakiyesi:', f'{kapanis_bakiye:,.2f} ₺'],
+        ['<b>Cari:</b>', cari.ad_soyad],
+        ['<b>Tarih Aralığı:</b>', f'{tarih_baslangic} - {tarih_bitis}'],
+        ['<b>Açılış Bakiyesi:</b>', f'{acilis_bakiye:,.2f} ₺'],
+        ['<b>Kapanış Bakiyesi:</b>', f'<b>{kapanis_bakiye:,.2f} ₺</b>'],
     ]
     
-    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+    info_table = Table(info_data, colWidths=[2.2*inch, 3.3*inch])
     info_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
     ]))
     elements.append(info_table)
     elements.append(Spacer(1, 0.3*inch))
     
+    # Ekstre tablosu
     headers = ['Tarih', 'Açıklama', 'Belge No', 'Borç', 'Alacak', 'Bakiye']
     table_data = [headers]
     
     for satir in ekstre_satirlari:
         table_data.append([
             satir['tarih'].strftime('%d.%m.%Y'),
-            satir['aciklama'],
-            satir['belge'],
-            f'{satir["borc"]:,.2f} ₺',
-            f'{satir["alacak"]:,.2f} ₺',
+            satir['aciklama'][:50] if len(satir['aciklama']) > 50 else satir['aciklama'],  # Uzun açıklamaları kısalt
+            satir['belge'][:20] if len(satir['belge']) > 20 else satir['belge'],
+            f'{satir["borc"]:,.2f} ₺' if satir["borc"] > 0 else '-',
+            f'{satir["alacak"]:,.2f} ₺' if satir["alacak"] > 0 else '-',
             f'{satir["bakiye"]:,.2f} ₺'
         ])
     
-    ekstre_table = Table(table_data, colWidths=[1*inch, 2.5*inch, 1*inch, 1*inch, 1*inch, 1*inch])
+    ekstre_table = Table(table_data, colWidths=[1.0*inch, 2.3*inch, 1.0*inch, 1.0*inch, 1.0*inch, 1.0*inch])
     ekstre_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+        # Başlık satırı
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, 0), TA_CENTER),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        
+        # Veri satırları
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 1), (0, -1), TA_CENTER),  # Tarih
+        ('ALIGN', (1, 1), (1, -1), TA_LEFT),    # Açıklama
+        ('ALIGN', (2, 1), (2, -1), TA_CENTER), # Belge No
+        ('ALIGN', (3, 1), (3, -1), TA_RIGHT),   # Borç
+        ('ALIGN', (4, 1), (4, -1), TA_RIGHT),   # Alacak
+        ('ALIGN', (5, 1), (5, -1), TA_RIGHT),   # Bakiye
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
     elements.append(ekstre_table)
     
+    # PDF oluştur
     doc.build(elements)
+    
+    # Response hazırla
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(content_type='application/pdf; charset=utf-8')
+    filename = f"Cari_Ekstre_{cari.ad_soyad}_{tarih_baslangic}_{tarih_bitis}.pdf"
+    # Dosya adındaki özel karakterleri temizle
+    filename = filename.replace(' ', '_').replace('/', '_')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write(pdf)
+    
     log_action(request.user, 'export', cari, f'Cari ekstre PDF export: {cari.ad_soyad}')
     return response
 

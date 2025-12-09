@@ -16,7 +16,7 @@ def handler500(request):
 
 
 def home(request):
-    """Ana sayfa - Giriş yapmamış kullanıcıları login'e yönlendir"""
+    """Ana sayfa - Giriş yapmamış kullanıcıları login'e yönlendir, giriş yapmış olanları dashboard'a"""
     if not request.user.is_authenticated:
         return redirect('login')
     return redirect('raporlar:dashboard')

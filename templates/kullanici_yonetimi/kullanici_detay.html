@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ kullanici.get_full_name|default:kullanici.username }} - Detay{% endblock %}
+{% block page_title %}<i class="bi bi-person-circle"></i> {{ kullanici.get_full_name|default:kullanici.username }} - Detaylı Analiz{% endblock %}
+
+{% block content %}
+<!-- Filtreleme -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="tarih_baslangic" class="form-label">Başlangıç Tarihi</label>
+                <input type="date" name="tarih_baslangic" id="tarih_baslangic" class="form-control" 
+                       value="{{ tarih_baslangic }}">
+            </div>
+            <div class="col-md-4">
+                <label for="tarih_bitis" class="form-label">Bitiş Tarihi</label>
+                <input type="date" name="tarih_bitis" id="tarih_bitis" class="form-control" 
+                       value="{{ tarih_bitis }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrele
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card stat-primary">
+            <div class="card-body text-center">
+                <i class="bi bi-cash-stack" style="font-size: 2rem; color: #667eea;"></i>
+                <h3 class="mt-2">{{ toplam_satis|floatformat:2 }} ₺</h3>
+                <p class="text-muted mb-0">Toplam Satış</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-info">
+            <div class="card-body text-center">
+                <i class="bi bi-receipt" style="font-size: 2rem; color: #17a2b8;"></i>
+                <h3 class="mt-2">{{ fatura_sayisi }}</h3>
+                <p class="text-muted mb-0">Fatura Sayısı</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-success">
+            <div class="card-body text-center">
+                <i class="bi bi-box-seam" style="font-size: 2rem; color: #28a745;"></i>
+                <h3 class="mt-2">{{ toplam_urun_adedi }}</h3>
+                <p class="text-muted mb-0">Toplam Ürün Adedi</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card stat-warning">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up" style="font-size: 2rem; color: #ffc107;"></i>
+                <h3 class="mt-2">{{ ortalama_fatura|floatformat:2 }} ₺</h3>
+                <p class="text-muted mb-0">Ortalama Fatura</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aylık Satış Trendi -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="bi bi-graph-up text-primary"></i> Son 6 Ay Satış Trendi</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="aylikSatisGrafik" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="bi bi-trophy text-warning"></i> En Çok Satılan Ürünler</h6>
+            </div>
+            <div class="card-body">
+                {% if en_cok_satilan %}
+                <div class="list-group list-group-flush">
+                    {% for urun in en_cok_satilan %}
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ urun.urun_adi|truncatewords:3 }}</strong>
+                                <br>
+                                <small class="text-muted">{{ urun.toplam_miktar }} adet</small>
+                            </div>
+                            <span class="badge bg-primary">{{ urun.toplam_tutar|floatformat:2 }} ₺</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">Henüz satış verisi yok</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- En Çok Satış Yapılan Cariler -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="bi bi-people text-info"></i> En Çok Satış Yapılan Cariler</h6>
+            </div>
+            <div class="card-body">
+                {% if en_cok_cariler %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Cari</th>
+                                <th class="text-center">Fatura</th>
+                                <th class="text-end">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cari in en_cok_cariler %}
+                            <tr>
+                                <td>{{ cari.cari__ad_soyad|default:"-" }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ cari.fatura_sayisi }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ cari.toplam_tutar|floatformat:2 }} ₺</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">Henüz cari verisi yok</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0">
+                <h6 class="mb-0"><i class="bi bi-receipt text-success"></i> Son Faturalar</h6>
+            </div>
+            <div class="card-body">
+                {% if satis_faturalari %}
+                <div class="list-group list-group-flush">
+                    {% for fatura in satis_faturalari %}
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>
+                                    <a href="{% url 'fatura:detay' fatura.pk %}" class="text-decoration-none">
+                                        {{ fatura.fatura_no }}
+                                    </a>
+                                </strong>
+                                <br>
+                                <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ fatura.genel_toplam|floatformat:2 }} ₺</span>
+                                <br>
+                                <small class="text-muted">{{ fatura.fatura_tarihi|date:"d.m.Y" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">Henüz fatura yok</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between">
+    <a href="{% url 'kullanici_yonetimi:index' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Geri Dön
+    </a>
+    <a href="{% url 'kullanici_yonetimi:kullanici_rapor' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}" 
+       class="btn btn-primary" target="_blank">
+        <i class="bi bi-file-pdf"></i> Detaylı Rapor
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .stat-card {
+        transition: all 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('aylikSatisGrafik');
+    if (ctx) {
+        const aylikSatis = {{ aylik_satis|safe }};
+        if (aylikSatis && aylikSatis.length > 0) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: aylikSatis.map(item => item.ay),
+                    datasets: [{
+                        label: 'Satış (₺)',
+                        data: aylikSatis.map(item => item.tutar),
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('tr-TR') + ' ₺';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
+

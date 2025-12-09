@@ -17,7 +17,8 @@ class UrunSerializer(serializers.ModelSerializer):
     class Meta:
         model = Urun
         fields = ['id', 'kategori', 'kategori_adi', 'ad', 'barkod', 'birim', 'fiyat', 
-                  'min_stok_adedi', 'mevcut_stok', 'olusturma_tarihi']
+                  'mevcut_stok', 'olusturma_tarihi']
+        read_only_fields = ['min_stok_adedi']  # Her zaman 0
 
 
 class StokHareketiSerializer(serializers.ModelSerializer):

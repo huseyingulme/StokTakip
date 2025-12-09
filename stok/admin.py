@@ -11,17 +11,17 @@ class KategoriAdmin(admin.ModelAdmin):
 
 @admin.register(Urun)
 class UrunAdmin(admin.ModelAdmin):
-    list_display = ['ad', 'kategori', 'barkod', 'fiyat', 'mevcut_stok', 'min_stok_adedi', 'birim', 'olusturma_tarihi']
+    list_display = ['ad', 'kategori', 'barkod', 'fiyat', 'mevcut_stok', 'birim', 'olusturma_tarihi']
     list_filter = ['kategori', 'birim', 'olusturma_tarihi']
     search_fields = ['ad', 'barkod']
-    list_editable = ['fiyat', 'min_stok_adedi']
-    readonly_fields = ['olusturma_tarihi', 'mevcut_stok']
+    list_editable = ['fiyat']
+    readonly_fields = ['olusturma_tarihi', 'mevcut_stok', 'min_stok_adedi']
     fieldsets = (
         ('Ürün Bilgileri', {
             'fields': ('ad', 'kategori', 'barkod', 'birim')
         }),
         ('Fiyat ve Stok', {
-            'fields': ('fiyat', 'min_stok_adedi', 'mevcut_stok')
+            'fields': ('fiyat', 'mevcut_stok', 'min_stok_adedi')
         }),
         ('Tarihler', {
             'fields': ('olusturma_tarihi',),

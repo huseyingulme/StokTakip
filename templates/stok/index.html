@@ -3,25 +3,100 @@
 {% block page_title %}Stok Yönetimi{% endblock %}
 
 {% block content %}
+<!-- Stok Uyarıları -->
+{% if stoksuz_urunler %}
+<div class="row mb-4">
+    {% if stoksuz_urunler %}
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-x-circle"></i> Stoksuz Ürünler</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for urun in stoksuz_urunler %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ urun.ad }}</strong><br>
+                            <small class="text-muted">Stok: 0</small>
+                        </div>
+                        <a href="{% url 'stok:stok_duzenle' urun.pk %}" class="btn btn-sm btn-danger">
+                            <i class="bi bi-pencil"></i> Düzenle
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4>Stok Tanım Kartları</h4>
-    <a href="{% url 'stok:ekle' %}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Yeni Ürün Ekle
-    </a>
+    <div>
+        <a href="{% url 'stok:import' %}" class="btn btn-success">
+            <i class="bi bi-upload"></i> CSV Import
+        </a>
+        <a href="{% url 'stok:toplu_islem' %}" class="btn btn-info">
+            <i class="bi bi-list-check"></i> Toplu İşlem
+        </a>
+        <a href="{% url 'stok:sayim' %}" class="btn btn-secondary">
+            <i class="bi bi-clipboard-check"></i> Stok Sayımı
+        </a>
+        <a href="{% url 'stok:ekle' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Yeni Ürün Ekle
+        </a>
+    </div>
 </div>
 
 <div class="card">
     <div class="card-body">
-        <form method="get" class="mb-3">
-            <div class="row g-2">
-                <div class="col-md-10">
+        <!-- Gelişmiş Filtreleme -->
+        <form method="get" class="mb-4">
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Arama</label>
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Ürün adı veya barkod ile ara..." value="{{ search_query }}">
+                           placeholder="Ürün adı, barkod, kategori..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search"></i> Ara
+                    <label class="form-label">Kategori</label>
+                    <select name="kategori" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for kategori in kategoriler %}
+                        <option value="{{ kategori.id }}" {% if kategori_filter == kategori.id|stringformat:"s" %}selected{% endif %}>
+                            {{ kategori.ad }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Stok Durumu</label>
+                    <select name="stok_durumu" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="stoksuz" {% if stok_durumu == 'stoksuz' %}selected{% endif %}>Stoksuz</option>
+                        <option value="stoklu" {% if stok_durumu == 'stoklu' %}selected{% endif %}>Stoklu</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Min Fiyat (₺)</label>
+                    <input type="number" name="fiyat_min" class="form-control" step="0.01" value="{{ fiyat_min }}" placeholder="0.00">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Max Fiyat (₺)</label>
+                    <input type="number" name="fiyat_max" class="form-control" step="0.01" value="{{ fiyat_max }}" placeholder="0.00">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Filtrele
                     </button>
+                    <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Temizle
+                    </a>
                 </div>
             </div>
         </form>
@@ -51,7 +126,7 @@
                         <td>{{ urun.birim }}</td>
                         <td>{{ urun.fiyat|floatformat:2 }} ₺</td>
                         <td>
-                            <span class="badge {% if urun.mevcut_stok <= urun.min_stok_adedi %}bg-warning{% else %}bg-success{% endif %}">
+                            <span class="badge {% if urun.mevcut_stok == 0 %}bg-danger{% else %}bg-success{% endif %}">
                                 {{ urun.mevcut_stok }} {{ urun.birim }}
                             </span>
                         </td>
@@ -80,10 +155,10 @@
             <ul class="pagination justify-content-center">
                 {% if urunler.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">İlk</a>
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if stok_durumu %}&stok_durumu={{ stok_durumu }}{% endif %}{% if fiyat_min %}&fiyat_min={{ fiyat_min }}{% endif %}{% if fiyat_max %}&fiyat_max={{ fiyat_max }}{% endif %}">İlk</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ urunler.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Önceki</a>
+                    <a class="page-link" href="?page={{ urunler.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if stok_durumu %}&stok_durumu={{ stok_durumu }}{% endif %}{% if fiyat_min %}&fiyat_min={{ fiyat_min }}{% endif %}{% if fiyat_max %}&fiyat_max={{ fiyat_max }}{% endif %}">Önceki</a>
                 </li>
                 {% endif %}
                 <li class="page-item active">
@@ -91,10 +166,10 @@
                 </li>
                 {% if urunler.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ urunler.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Sonraki</a>
+                    <a class="page-link" href="?page={{ urunler.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if stok_durumu %}&stok_durumu={{ stok_durumu }}{% endif %}{% if fiyat_min %}&fiyat_min={{ fiyat_min }}{% endif %}{% if fiyat_max %}&fiyat_max={{ fiyat_max }}{% endif %}">Sonraki</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ urunler.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Son</a>
+                    <a class="page-link" href="?page={{ urunler.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if stok_durumu %}&stok_durumu={{ stok_durumu }}{% endif %}{% if fiyat_min %}&fiyat_min={{ fiyat_min }}{% endif %}{% if fiyat_max %}&fiyat_max={{ fiyat_max }}{% endif %}">Son</a>
                 </li>
                 {% endif %}
             </ul>
