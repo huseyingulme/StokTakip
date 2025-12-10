@@ -23,7 +23,7 @@
             </ul>
         </div>
         {% endif %}
-        <form method="post" id="faturaForm">
+        <form method="post" id="faturaForm" data-is-edit="{% if fatura %}true{% else %}false{% endif %}">
             {% csrf_token %}
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
@@ -38,13 +38,6 @@
                     {{ form.cari }}
                     {% if form.cari.errors %}
                         <div class="text-danger small">{{ form.cari.errors }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">{{ form.vade_tarihi.label }}</label>
-                    {{ form.vade_tarihi }}
-                    {% if form.vade_tarihi.errors %}
-                    <div class="text-danger small">{{ form.vade_tarihi.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-3">
@@ -93,8 +86,9 @@
                                 <select class="form-control urun-select" name="urun_id[]">
                                     <option value="">Seçiniz</option>
                                     {% for urun in urunler %}
-                                    <option value="{{ urun.id }}" data-fiyat="{{ urun.fiyat }}"
-                                        data-stok="{{ urun.mevcut_stok }}">{{ urun.ad }} - Stok: {{ urun.mevcut_stok }}
+                                    <option value="{{ urun.id }}" data-satis-fiyat="{{ urun.fiyat }}"
+                                        data-alis-fiyat="{{ urun.alis_fiyati }}" data-stok="{{ urun.mevcut_stok }}">
+                                        {{ urun.ad }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -251,9 +245,37 @@
             if (e.target.classList.contains('urun-select')) {
                 const satir = e.target.closest('.urun-satir');
                 const option = e.target.options[e.target.selectedIndex];
-                if (option.value) {
-                    const fiyat = parseFloat(option.dataset.fiyat) || 0;
-                    satir.querySelector('.birim-fiyat').value = fiyat.toFixed(2);
+                if (option.value && option.value.trim() !== '') {
+                    // Fatura tipine göre doğru fiyatı seç
+                    const faturaTipi = faturaTipiField ? faturaTipiField.value : '{{ tip|default:"Satis" }}';
+                    let fiyat = 0;
+                    if (faturaTipi === 'Alis') {
+                        fiyat = parseFloat(option.dataset.alisFiyat) || 0;
+                    } else {
+                        fiyat = parseFloat(option.dataset.satisFiyat) || 0;
+                    }
+                    const birimFiyatInput = satir.querySelector('.birim-fiyat');
+                    if (birimFiyatInput) {
+                        birimFiyatInput.value = fiyat.toFixed(2);
+                        // KDV dahil fiyatı da güncelle
+                        const kdvOrani = parseFloat(satir.querySelector('.kdv-orani').value) || 20;
+                        const kdvDahilFiyat = fiyat * (1 + kdvOrani / 100);
+                        const kdvDahilInput = satir.querySelector('.kdv-dahil-fiyat');
+                        if (kdvDahilInput) {
+                            kdvDahilInput.value = kdvDahilFiyat.toFixed(2);
+                        }
+                    }
+                    hesaplaSatir(satir);
+                } else {
+                    // Ürün seçimi kaldırıldıysa fiyatları sıfırla
+                    const birimFiyatInput = satir.querySelector('.birim-fiyat');
+                    if (birimFiyatInput) {
+                        birimFiyatInput.value = '0.00';
+                    }
+                    const kdvDahilInput = satir.querySelector('.kdv-dahil-fiyat');
+                    if (kdvDahilInput) {
+                        kdvDahilInput.value = '0.00';
+                    }
                     hesaplaSatir(satir);
                 }
             } else if (e.target.classList.contains('miktar') ||
@@ -264,6 +286,23 @@
                 hesaplaSatir(satir);
             } else if (e.target === iskontoOraniField) {
                 hesaplaToplamlar();
+            } else if (e.target === faturaTipiField) {
+                // Fatura tipi değiştiğinde tüm ürün fiyatlarını güncelle
+                document.querySelectorAll('.urun-select').forEach(select => {
+                    if (select.value) {
+                        const satir = select.closest('.urun-satir');
+                        const option = select.options[select.selectedIndex];
+                        const faturaTipi = faturaTipiField.value;
+                        let fiyat = 0;
+                        if (faturaTipi === 'Alis') {
+                            fiyat = parseFloat(option.dataset.alisFiyat) || 0;
+                        } else {
+                            fiyat = parseFloat(option.dataset.satisFiyat) || 0;
+                        }
+                        satir.querySelector('.birim-fiyat').value = fiyat.toFixed(2);
+                        hesaplaSatir(satir);
+                    }
+                });
             }
         });
 
@@ -294,17 +333,41 @@
 
 
         document.getElementById('faturaForm').addEventListener('submit', function (e) {
-            let urunVar = false;
-            document.querySelectorAll('.urun-select').forEach(select => {
-                if (select.value) {
-                    urunVar = true;
+            // Fatura düzenleme durumunda kontrol yapma (mevcut kalemler zaten var)
+            const isEdit = this.dataset.isEdit === 'true';
+
+            // Boş ürün satırlarını formdan kaldır (gönderilmesin)
+            let gecerliUrunSayisi = 0;
+            document.querySelectorAll('.urun-satir').forEach(satir => {
+                const select = satir.querySelector('.urun-select');
+                const miktarInput = satir.querySelector('.miktar');
+
+                if (!select || !select.value || select.value.trim() === '' ||
+                    !miktarInput || !miktarInput.value || parseFloat(miktarInput.value) <= 0) {
+                    // Boş satırı formdan kaldır - disabled yap (disabled input'lar POST'a gönderilmez)
+                    satir.querySelectorAll('input, select').forEach(input => {
+                        input.disabled = true;
+                    });
+                } else {
+                    gecerliUrunSayisi++;
+                    // Geçerli satırlardaki input'ların disabled olmadığından emin ol
+                    satir.querySelectorAll('input, select').forEach(input => {
+                        input.disabled = false;
+                    });
                 }
             });
 
-            if (!urunVar) {
+            if (!isEdit) {
+                // Yeni fatura oluşturma - en az bir ürün seçilmeli
+                if (gecerliUrunSayisi === 0) {
                 e.preventDefault();
                 alert('Lütfen en az bir ürün seçiniz!');
+                    // Disabled input'ları tekrar aktif et
+                    document.querySelectorAll('.urun-satir input, .urun-satir select').forEach(input => {
+                        input.disabled = false;
+                    });
                 return false;
+                }
             }
         });
     });

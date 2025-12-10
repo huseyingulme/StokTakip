@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import HesapKart, FinansHareketi
 
 
@@ -56,16 +58,33 @@ class FinansHareketiForm(forms.ModelForm):
         self.fields['hedef_hesap'].required = False
     
     def clean(self):
+        """Custom validation for FinansHareketiForm."""
         cleaned_data = super().clean()
+        errors = {}
+        
         hareket_tipi = cleaned_data.get('hareket_tipi')
         hedef_hesap = cleaned_data.get('hedef_hesap')
         hesap = cleaned_data.get('hesap')
         
+        # Transfer kontrolü (mevcut)
         if hareket_tipi == 'transfer' and not hedef_hesap:
-            raise forms.ValidationError('Transfer işlemi için hedef hesap seçilmelidir.')
+            errors['hedef_hesap'] = 'Transfer işlemi için hedef hesap seçilmelidir.'
         
         if hareket_tipi == 'transfer' and hesap == hedef_hesap:
-            raise forms.ValidationError('Kaynak ve hedef hesap aynı olamaz.')
+            errors['hedef_hesap'] = 'Kaynak ve hedef hesap aynı olamaz.'
+        
+        # Tutar kontrolü
+        tutar = cleaned_data.get('tutar')
+        if tutar is not None and tutar <= 0:
+            errors['tutar'] = 'Tutar 0\'dan büyük olmalıdır.'
+        
+        # Tarih gelecek tarih kontrolü
+        tarih = cleaned_data.get('tarih')
+        if tarih and tarih > timezone.now().date():
+            errors['tarih'] = 'Gelecek tarih seçilemez.'
+        
+        if errors:
+            raise ValidationError(errors)
         
         return cleaned_data
 

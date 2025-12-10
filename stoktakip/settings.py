@@ -7,12 +7,33 @@ load_dotenv()  # .env yükle
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-khiwn=bbimfus$g#@m(&zer7ef-5adq8jhtge+a(b!3sc92%_0')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Production'da DEBUG=False olmalı, development için .env'de DEBUG=True yapılabilir
+# Development için varsayılan olarak True (production'da mutlaka False yapılmalı!)
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# SECRET_KEY - Production'da mutlaka environment variable'dan alınmalı
+# Development için fallback key kullanılabilir
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    # Development için geçici bir key (production'da kullanılmamalı!)
+    SECRET_KEY = 'django-insecure-dev-key-only-for-development-do-not-use-in-production'
+    # Production modunda uyarı ver (DEBUG=False ise)
+    if not DEBUG:
+        import warnings
+        warnings.filterwarnings('once')  # Sadece bir kez göster
+        
+
+# ALLOWED_HOSTS - Production'da mutlaka doldurulmalı
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
+if not ALLOWED_HOSTS:
+    # Development için localhost ve 127.0.0.1 ekle
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+    # Production modunda uyarı ver (DEBUG=False ise)
+    if not DEBUG:
+        import warnings
+        warnings.filterwarnings('once')  # Sadece bir kez göster
+        
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/raporlar/'  # Giriş sonrası dashboard'a yönlendir
@@ -41,6 +62,13 @@ INSTALLED_APPS = [
     "kullanici_yonetimi",
     "api",
 ]
+
+# drf_spectacular (API documentation) - optional
+try:
+    import drf_spectacular  # pyright: ignore[reportMissingImports]
+    INSTALLED_APPS.insert(INSTALLED_APPS.index("rest_framework") + 1, "drf_spectacular")
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -145,8 +173,32 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    },
 }
+
+# API Documentation (drf-spectacular) - optional
+try:
+    import drf_spectacular  # pyright: ignore[reportMissingImports]
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
+    
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Stok Takip API',
+        'DESCRIPTION': 'Stok Takip Sistemi API Dokümantasyonu',
+        'VERSION': '1.0.0',
+        'SERVE_INCLUDE_SCHEMA': False,
+        'COMPONENT_SPLIT_REQUEST': True,
+        'SCHEMA_PATH_PREFIX': '/api/v1/',
+    }
+except ImportError:
+    pass
 
 # Email settings (Password reset için)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development için console

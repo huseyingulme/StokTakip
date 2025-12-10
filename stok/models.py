@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
+from django.core.exceptions import ValidationError
 
 
 class Kategori(models.Model):
@@ -23,7 +24,8 @@ class Urun(models.Model):
     ad = models.CharField(max_length=200, verbose_name="Ürün Adı")
     barkod = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name="Barkod")
     birim = models.CharField(max_length=20, default='Adet', verbose_name="Birim")
-    fiyat = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Satış Fiyatı")
+    alis_fiyati = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Alış Fiyatı (₺)")
+    fiyat = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Satış Fiyatı (₺)")
     min_stok_adedi = models.IntegerField(default=0, verbose_name="Minimum Stok Seviyesi", editable=False)
     resim = models.ImageField(upload_to='urunler/', blank=True, null=True, verbose_name="Ürün Resmi")
     qr_kod = models.ImageField(upload_to='qr_kodlar/', blank=True, null=True, verbose_name="QR Kod")
@@ -34,13 +36,38 @@ class Urun(models.Model):
         verbose_name_plural = "Ürünler"
         ordering = ['ad']
         db_table = 'stok_urun'
+        indexes = [
+            models.Index(fields=['ad'], name='urun_ad_idx'),
+        ]
 
     def __str__(self):
         return self.ad
     
+    def clean(self):
+        """Model-level validation for Urun."""
+        errors = {}
+        
+        # Alış fiyatı kontrolü
+        if self.alis_fiyati < 0:
+            errors['alis_fiyati'] = 'Alış fiyatı negatif olamaz.'
+        
+        # Satış fiyatı kontrolü
+        if self.fiyat < 0:
+            errors['fiyat'] = 'Satış fiyatı negatif olamaz.'
+        
+        # Barkod unique kontrolü (form'da var ama model'de de olmalı)
+        if self.barkod:
+            existing = Urun.objects.filter(barkod=self.barkod).exclude(pk=self.pk)
+            if existing.exists():
+                errors['barkod'] = 'Bu barkod numarası zaten kullanılıyor.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def save(self, *args, **kwargs):
         # Minimum stok seviyesi her zaman 0 olacak
         self.min_stok_adedi = 0
+        self.full_clean()  # clean() metodunu çağır
         super().save(*args, **kwargs)
 
     @property
@@ -76,6 +103,28 @@ class StokHareketi(models.Model):
         verbose_name_plural = "Stok Hareketleri"
         ordering = ['-tarih']
         db_table = 'stok_stokhareketi'
+        indexes = [
+            models.Index(fields=['tarih'], name='stokhareketi_tarih_idx'),
+            models.Index(fields=['islem_turu'], name='stokhareketi_islem_turu_idx'),
+            models.Index(fields=['urun', 'tarih'], name='stokhareketi_urun_tarih_idx'),
+        ]
 
     def __str__(self):
         return f"{self.urun.ad} - {self.get_islem_turu_display()} - {self.miktar} {self.urun.birim}"
+    
+    def clean(self):
+        """Model-level validation for StokHareketi."""
+        errors = {}
+        
+        # Miktar kontrolü
+        if self.miktar <= 0:
+            errors['miktar'] = 'Miktar 0\'dan büyük olmalıdır.'
+        
+        # Stok kontrolü kaldırıldı - negatif stok olabilir
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
+        super().save(*args, **kwargs)

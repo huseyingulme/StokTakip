@@ -31,15 +31,31 @@ class CariAdmin(admin.ModelAdmin):
 
     def bakiye_renkli(self, obj):
         bakiye = obj.bakiye
-        if bakiye > 0:
-            color = 'red'
-            text = f'{bakiye:,.2f} ₺ (Borç)'
-        elif bakiye < 0:
-            color = 'green'
-            text = f'{abs(bakiye):,.2f} ₺ (Alacak)'
+        bakiye_abs = abs(bakiye)
+        
+        # Renk kodlaması: Yeşil = Onun bize borcu var (Negatif), Kırmızı = Bizim ona borcumuz var (Pozitif)
+        if obj.kategori == 'musteri':
+            # Müşteri için: Pozitif = Kırmızı (Biz müşteriye borçluyuz), Negatif = Yeşil (Müşteri bize borçlu)
+            if bakiye > 0:
+                color = 'red'
+                text = f'{bakiye:,.2f} ₺'
+            elif bakiye < 0:
+                color = 'green'
+                text = f'{bakiye_abs:,.2f} ₺'
+            else:
+                color = 'black'
+                text = '0.00 ₺'
         else:
-            color = 'black'
-            text = '0.00 ₺'
+            # Tedarikçi veya her_ikisi için: Pozitif = Kırmızı (Biz tedarikçiye borçluyuz), Negatif = Yeşil (Tedarikçi bize borçlu)
+            if bakiye > 0:
+                color = 'red'
+                text = f'{bakiye:,.2f} ₺'
+            elif bakiye < 0:
+                color = 'green'
+                text = f'{bakiye_abs:,.2f} ₺'
+            else:
+                color = 'black'
+                text = '0.00 ₺'
         return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, text)
     bakiye_renkli.short_description = 'Bakiye'
 

@@ -28,11 +28,11 @@
             <div class="col-md-3">
                 <label for="siralama" class="form-label">Sıralama</label>
                 <select name="siralama" id="siralama" class="form-select">
-                    <option value="toplam_satis" {% if siralama=='toplam_satis' %}selected{% endif %}>Toplam Satış
+                    <option value="toplam_satis" {% if siralama == 'toplam_satis' %}selected{% endif %}>Toplam Satış
                     </option>
-                    <option value="fatura_sayisi" {% if siralama=='fatura_sayisi' %}selected{% endif %}>Fatura Sayısı
+                    <option value="fatura_sayisi" {% if siralama == 'fatura_sayisi' %}selected{% endif %}>Fatura Sayısı
                     </option>
-                    <option value="ortalama_fatura" {% if siralama=='ortalama_fatura' %}selected{% endif %}>Ortalama
+                    <option value="ortalama_fatura" {% if siralama == 'ortalama_fatura' %}selected{% endif %}>Ortalama
                         Fatura</option>
                 </select>
             </div>

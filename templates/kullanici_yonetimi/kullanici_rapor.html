@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ kullanici.get_full_name|default:kullanici.username }} - Rapor{% endblock %}
-{% block page_title %}<i class="bi bi-file-text"></i> {{ kullanici.get_full_name|default:kullanici.username }} - Detaylı Rapor{% endblock %}
+{% block page_title %}<i class="bi bi-file-text"></i> {{ kullanici.get_full_name|default:kullanici.username }} - Detaylı
+Rapor{% endblock %}
 
 {% block content %}
 <div class="card shadow-sm border-0 mb-4">
@@ -37,9 +38,9 @@
                         </td>
                         <td class="text-center">
                             <span class="badge 
-                                {% if fatura.durum == 'Odendi' %}bg-success
-                                {% elif fatura.durum == 'Beklemede' %}bg-warning
-                                {% else %}bg-danger{% endif %}">
+                                {% if fatura.durum == 'KasadanKapanacak' %}bg-success
+                                {% elif fatura.durum == 'AcikHesap' %}bg-warning
+                                {% else %}bg-secondary{% endif %}">
                                 {{ fatura.get_durum_display }}
                             </span>
                         </td>
@@ -56,11 +57,11 @@
                         <th colspan="3" class="text-end">TOPLAM:</th>
                         <th class="text-end">
                             {% with total=0 %}
-                                {% for fatura in satis_faturalari %}
-                                    {% widthratio fatura.genel_toplam 1 1 as tutar %}
-                                    {% with total=total|add:tutar %}{% endwith %}
-                                {% endfor %}
-                                {{ total|floatformat:2 }} ₺
+                            {% for fatura in satis_faturalari %}
+                            {% widthratio fatura.genel_toplam 1 1 as tutar %}
+                            {% with total=total|add:tutar %}{% endwith %}
+                            {% endfor %}
+                            {{ total|floatformat:2 }} ₺
                             {% endwith %}
                         </th>
                         <th colspan="2"></th>
@@ -77,8 +78,8 @@
 </div>
 
 <div class="d-flex justify-content-between">
-    <a href="{% url 'kullanici_yonetimi:kullanici_detay' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}" 
-       class="btn btn-secondary">
+    <a href="{% url 'kullanici_yonetimi:kullanici_detay' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}"
+        class="btn btn-secondary">
         <i class="bi bi-arrow-left"></i> Geri Dön
     </a>
     <a href="{% url 'kullanici_yonetimi:index' %}" class="btn btn-primary">
@@ -86,4 +87,3 @@
     </a>
 </div>
 {% endblock %}
-

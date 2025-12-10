@@ -40,6 +40,13 @@
                     {% endif %}
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">{{ form.alis_fiyati.label }}</label>
+                    {{ form.alis_fiyati }}
+                    {% if form.alis_fiyati.errors %}
+                        <div class="text-danger small">{{ form.alis_fiyati.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">{{ form.fiyat.label }}</label>
                     {{ form.fiyat }}
                     {% if form.fiyat.errors %}

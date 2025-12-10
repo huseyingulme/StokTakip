@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from decimal import Decimal
+import re
 
 
 class Cari(models.Model):
@@ -36,12 +39,52 @@ class Cari(models.Model):
         verbose_name_plural = "Cariler"
         ordering = ['ad_soyad']
         db_table = 'cari_cari'
+        indexes = [
+            models.Index(fields=['durum'], name='cari_durum_idx'),
+            models.Index(fields=['kategori'], name='cari_kategori_idx'),
+            models.Index(fields=['ad_soyad'], name='cari_ad_soyad_idx'),
+            models.Index(fields=['vergi_no'], name='cari_vergi_no_idx'),
+        ]
 
     def __str__(self):
         return self.ad_soyad
+    
+    def clean(self):
+        """Model-level validation for Cari."""
+        errors = {}
+        
+        # Risk limiti kontrolü
+        if self.risk_limiti < 0:
+            errors['risk_limiti'] = 'Risk limiti negatif olamaz.'
+        
+        # TC/VKN format validation
+        if self.tc_vkn:
+            tc_vkn_clean = self.tc_vkn.replace('-', '').replace(' ', '')
+            if not (len(tc_vkn_clean) == 11 or len(tc_vkn_clean) == 10):
+                errors['tc_vkn'] = 'TC/VKN 11 (TC) veya 10 (VKN) karakter olmalıdır.'
+            elif not tc_vkn_clean.isdigit():
+                errors['tc_vkn'] = 'TC/VKN sadece rakam içermelidir.'
+        
+        # Vergi no format validation
+        if self.vergi_no:
+            vergi_no_clean = self.vergi_no.replace('-', '').replace(' ', '')
+            if not vergi_no_clean.isdigit():
+                errors['vergi_no'] = 'Vergi numarası sadece rakam içermelidir.'
+        
+        # Email format validation (EmailField var ama ek kontrol)
+        if self.email:
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, self.email):
+                errors['email'] = 'Geçerli bir e-posta adresi giriniz.'
+        
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def bakiye(self):
+        # Bakiye hesaplaması: Pozitif = cari bize borçlu, Negatif = biz cariye borçluyuz
+        # Ancak gösterim için: Pozitif = biz ona borçluyuz (kırmızı), Negatif = o bize borçlu (yeşil)
+        # Bu yüzden hesaplamayı tersine çeviriyoruz
         borc_toplam = CariHareketi.objects.filter(
             cari=self,
             hareket_turu__in=['satis_faturasi', 'odeme']
@@ -52,7 +95,9 @@ class Cari(models.Model):
             hareket_turu__in=['alis_faturasi', 'tahsilat']
         ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
 
-        return borc_toplam - alacak_toplam
+        # Tersine çevir: alacak_toplam - borc_toplam
+        # Böylece: Pozitif = biz ona borçluyuz, Negatif = o bize borçlu
+        return alacak_toplam - borc_toplam
 
     @property
     def risk_asimi_var_mi(self):
@@ -98,9 +143,33 @@ class CariHareketi(models.Model):
         verbose_name_plural = "Cari Hareketleri"
         ordering = ['-tarih', '-id']
         db_table = 'cari_carihareketi'
+        indexes = [
+            models.Index(fields=['tarih'], name='carihareketi_tarih_idx'),
+            models.Index(fields=['hareket_turu'], name='carihareketi_hareket_turu_idx'),
+            models.Index(fields=['cari', 'tarih'], name='carihareketi_cari_tarih_idx'),
+        ]
 
     def __str__(self):
         return f"{self.cari.ad_soyad} - {self.get_hareket_turu_display()} - {self.tutar} ₺"
+    
+    def clean(self):
+        """Model-level validation for CariHareketi."""
+        errors = {}
+        
+        # Tutar kontrolü
+        if self.tutar <= 0:
+            errors['tutar'] = 'Tutar 0\'dan büyük olmalıdır.'
+        
+        # Tarih gelecek tarih kontrolü
+        if self.tarih and self.tarih > timezone.now():
+            errors['tarih'] = 'Gelecek tarih seçilemez.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
+        super().save(*args, **kwargs)
 
 
 class CariNotu(models.Model):
@@ -149,7 +218,25 @@ class TahsilatMakbuzu(models.Model):
     def __str__(self):
         return f"{self.makbuz_no} - {self.cari.ad_soyad} - {self.tutar} ₺"
 
+    def clean(self):
+        """Model-level validation for TahsilatMakbuzu."""
+        errors = {}
+        
+        # Tutar kontrolü
+        if self.tutar <= 0:
+            errors['tutar'] = 'Tutar 0\'dan büyük olmalıdır.'
+        
+        # Makbuz no unique kontrolü (unique=True var ama clean'de kontrol)
+        if self.makbuz_no:
+            existing = TahsilatMakbuzu.objects.filter(makbuz_no=self.makbuz_no).exclude(pk=self.pk)
+            if existing.exists():
+                errors['makbuz_no'] = 'Bu makbuz numarası zaten kullanılıyor.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
         super().save(*args, **kwargs)
         CariHareketi.objects.create(
             cari=self.cari,
@@ -191,7 +278,25 @@ class TediyeMakbuzu(models.Model):
     def __str__(self):
         return f"{self.makbuz_no} - {self.cari.ad_soyad} - {self.tutar} ₺"
 
+    def clean(self):
+        """Model-level validation for TediyeMakbuzu."""
+        errors = {}
+        
+        # Tutar kontrolü
+        if self.tutar <= 0:
+            errors['tutar'] = 'Tutar 0\'dan büyük olmalıdır.'
+        
+        # Makbuz no unique kontrolü (unique=True var ama clean'de kontrol)
+        if self.makbuz_no:
+            existing = TediyeMakbuzu.objects.filter(makbuz_no=self.makbuz_no).exclude(pk=self.pk)
+            if existing.exists():
+                errors['makbuz_no'] = 'Bu makbuz numarası zaten kullanılıyor.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
         super().save(*args, **kwargs)
         CariHareketi.objects.create(
             cari=self.cari,

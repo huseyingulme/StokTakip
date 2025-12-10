@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import Sum
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from datetime import datetime, time
 from decimal import Decimal
 from cari.models import Cari, CariHareketi
@@ -15,20 +16,18 @@ class Fatura(models.Model):
     ]
 
     DURUM_SECENEKLERI = [
-        ('Beklemede', 'Beklemede'),
-        ('Odendi', 'Ödendi'),
-        ('Iptal', 'İptal'),
+        ('AcikHesap', 'Açık Hesap'),
+        ('KasadanKapanacak', 'Kasadan Kapanacak'),
     ]
 
     fatura_no = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="Fatura No")
     cari = models.ForeignKey(Cari, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cari")
     fatura_tarihi = models.DateField(verbose_name="Fatura Tarihi")
-    vade_tarihi = models.DateField(blank=True, null=True, verbose_name="Vade Tarihi")
     toplam_tutar = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Toplam Tutar")
     kdv_tutari = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="KDV Tutarı")
     genel_toplam = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Genel Toplam")
     fatura_tipi = models.CharField(max_length=20, choices=TIP_SECENEKLERI, default='Satis', verbose_name="Fatura Tipi")
-    durum = models.CharField(max_length=20, choices=DURUM_SECENEKLERI, default='Beklemede', verbose_name="Durum")
+    durum = models.CharField(max_length=20, choices=DURUM_SECENEKLERI, default='AcikHesap', verbose_name="Durum")
     iskonto_orani = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), verbose_name="İskonto Oranı (%)")
     iskonto_tutari = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), verbose_name="İskonto Tutarı")
     aciklama = models.TextField(blank=True, null=True, verbose_name="Açıklama")
@@ -41,6 +40,12 @@ class Fatura(models.Model):
         verbose_name_plural = "Faturalar"
         ordering = ['-fatura_tarihi', '-olusturma_tarihi']
         db_table = 'fatura_fatura'
+        indexes = [
+            models.Index(fields=['fatura_tarihi'], name='fatura_tarihi_idx'),
+            models.Index(fields=['fatura_tipi'], name='fatura_tipi_idx'),
+            models.Index(fields=['durum'], name='fatura_durum_idx'),
+            models.Index(fields=['cari', 'fatura_tarihi'], name='fatura_cari_tarih_idx'),
+        ]
 
     def __str__(self):
         return f"{self.fatura_no} - {self.fatura_tarihi}"
@@ -81,49 +86,61 @@ class Fatura(models.Model):
             self.fatura_no = self.olustur_fatura_no()
         
         super().save(*args, **kwargs)
+        # Önce toplamları hesapla
         self.hesapla_toplamlar()
+        # genel_toplam'ı güncellemek için refresh yap
+        self.refresh_from_db()
         
-        if self.cari and self.genel_toplam > 0:
+        # Cari hareket mantığı: Sadece "Açık Hesap" durumunda cariye işle
+        # NOT: Yeni faturalar için kalemler henüz eklenmemiş olabilir, 
+        # bu yüzden cari hareketi view'larda (kalemler eklendikten sonra) oluşturulacak
+        # Burada sadece mevcut faturaların güncellenmesi durumunda cari hareketi güncellenir
+        if not is_new and self.cari and self.genel_toplam > 0:
+            # Alış faturası: alis_faturasi (ALACAK - biz cariye borçluyuz)
+            # Satış faturası: satis_faturasi (BORÇ - cari bize borçlu)
             hareket_turu = 'satis_faturasi' if self.fatura_tipi == 'Satis' else 'alis_faturasi'
             
-            if is_new:
-                CariHareketi.objects.create(
-                    cari=self.cari,
-                    hareket_turu=hareket_turu,
-                    tutar=self.genel_toplam,
-                    aciklama=f"Fatura: {self.fatura_no}",
-                    belge_no=self.fatura_no,
-                    tarih=datetime.combine(self.fatura_tarihi, time.min),
-                    olusturan=self.olusturan
-                )
-            else:
-                cari_hareket = CariHareketi.objects.filter(belge_no=self.fatura_no).first()
+            # Mevcut fatura güncelleniyor
+            cari_hareket = CariHareketi.objects.filter(belge_no=self.fatura_no).first()
+            
+            if self.durum == 'AcikHesap':
+                # Açık hesap - cari hareketi oluştur veya güncelle
                 if cari_hareket:
                     cari_hareket.tutar = self.genel_toplam
-                    cari_hareket.tarih = datetime.combine(self.fatura_tarihi, time.min)
+                    # Timezone-aware datetime oluştur
+                    tarih_naive = datetime.combine(self.fatura_tarihi, time.min)
+                    cari_hareket.tarih = timezone.make_aware(tarih_naive)
                     cari_hareket.aciklama = f"Fatura: {self.fatura_no}"
+                    cari_hareket.hareket_turu = hareket_turu  # Hareket türünü de güncelle
                     cari_hareket.save()
                 else:
+                    # Eğer cari hareketi yoksa oluştur (kalemler zaten eklenmiş olmalı)
+                    # Timezone-aware datetime oluştur
+                    tarih_naive = datetime.combine(self.fatura_tarihi, time.min)
                     CariHareketi.objects.create(
                         cari=self.cari,
                         hareket_turu=hareket_turu,
                         tutar=self.genel_toplam,
                         aciklama=f"Fatura: {self.fatura_no}",
                         belge_no=self.fatura_no,
-                        tarih=datetime.combine(self.fatura_tarihi, time.min),
+                        tarih=timezone.make_aware(tarih_naive),
                         olusturan=self.olusturan
                     )
+            elif self.durum == 'KasadanKapanacak':
+                # Kasadan kapanacak - cari hareketi sil (ödendi gibi)
+                if cari_hareket:
+                    cari_hareket.delete()
             
             if is_new:
                 for kalem in self.kalemler.all():
                     if kalem.urun:
                         stok_islem_turu = 'giriş' if self.fatura_tipi == 'Alis' else 'çıkış'
+                        # StokHareketi.tarih auto_now_add=True olduğu için tarih parametresi verilmez
                         StokHareketi.objects.create(
                             urun=kalem.urun,
                             islem_turu=stok_islem_turu,
                             miktar=kalem.miktar,
                             aciklama=f"Fatura: {self.fatura_no}",
-                            tarih=datetime.combine(self.fatura_tarihi, time.min),
                             olusturan=olusturan_user or self.olusturan
                         )
             else:
@@ -131,12 +148,12 @@ class Fatura(models.Model):
                 for kalem in self.kalemler.all():
                     if kalem.urun:
                         stok_islem_turu = 'giriş' if self.fatura_tipi == 'Alis' else 'çıkış'
+                        # StokHareketi.tarih auto_now_add=True olduğu için tarih parametresi verilmez
                         StokHareketi.objects.create(
                             urun=kalem.urun,
                             islem_turu=stok_islem_turu,
                             miktar=kalem.miktar,
                             aciklama=f"Fatura: {self.fatura_no}",
-                            tarih=datetime.combine(self.fatura_tarihi, time.min),
                             olusturan=olusturan_user or self.olusturan
                         )
 
@@ -180,8 +197,28 @@ class FaturaKalem(models.Model):
     def __str__(self):
         return f"{self.fatura.fatura_no} - {self.urun_adi}"
 
+    def clean(self):
+        """Model-level validation for FaturaKalem."""
+        errors = {}
+        
+        # Miktar kontrolü
+        if self.miktar <= 0:
+            errors['miktar'] = 'Miktar 0\'dan büyük olmalıdır.'
+        
+        # Birim fiyat kontrolü
+        if self.birim_fiyat < 0:
+            errors['birim_fiyat'] = 'Birim fiyat negatif olamaz.'
+        
+        # KDV oranı kontrolü
+        if self.kdv_orani < 0 or self.kdv_orani > 100:
+            errors['kdv_orani'] = 'KDV oranı 0 ile 100 arasında olmalıdır.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
     def save(self, *args, **kwargs):
         from decimal import Decimal
+        self.full_clean()  # clean() metodunu çağır
         ara_toplam = Decimal(str(self.birim_fiyat)) * Decimal(str(self.miktar))
         self.kdv_tutari = ara_toplam * (Decimal(str(self.kdv_orani)) / Decimal('100'))
         self.toplam_tutar = ara_toplam

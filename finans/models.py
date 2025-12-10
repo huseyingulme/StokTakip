@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 
@@ -56,3 +57,25 @@ class FinansHareketi(models.Model):
 
     def __str__(self):
         return f"{self.hareket_no} - {self.get_hareket_tipi_display()} - {self.tutar} ₺"
+    
+    def clean(self):
+        """Model-level validation for FinansHareketi."""
+        errors = {}
+        
+        # Tutar kontrolü
+        if self.tutar <= 0:
+            errors['tutar'] = 'Tutar 0\'dan büyük olmalıdır.'
+        
+        # Transfer işleminde hedef_hesap kontrolü
+        if self.hareket_tipi == 'transfer':
+            if not self.hedef_hesap:
+                errors['hedef_hesap'] = 'Transfer işlemi için hedef hesap seçilmelidir.'
+            elif self.hedef_hesap == self.hesap:
+                errors['hedef_hesap'] = 'Hedef hesap, kaynak hesaptan farklı olmalıdır.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
+        super().save(*args, **kwargs)

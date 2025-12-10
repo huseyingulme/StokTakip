@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+import re
 from .models import Cari, CariHareketi, CariNotu, TahsilatMakbuzu, TediyeMakbuzu
 
 
@@ -35,6 +37,46 @@ class CariForm(forms.ModelForm):
             'durum': 'Durum',
             'risk_limiti': 'Risk Limiti (₺)',
         }
+    
+    def clean(self):
+        """Custom validation for CariForm."""
+        cleaned_data = super().clean()
+        errors = {}
+        
+        # TC/VKN format validation
+        tc_vkn = cleaned_data.get('tc_vkn')
+        if tc_vkn:
+            tc_vkn_clean = tc_vkn.replace('-', '').replace(' ', '')
+            if not (len(tc_vkn_clean) == 11 or len(tc_vkn_clean) == 10):
+                errors['tc_vkn'] = 'TC/VKN 11 (TC) veya 10 (VKN) karakter olmalıdır.'
+            elif not tc_vkn_clean.isdigit():
+                errors['tc_vkn'] = 'TC/VKN sadece rakam içermelidir.'
+        
+        # Vergi no format validation
+        vergi_no = cleaned_data.get('vergi_no')
+        if vergi_no:
+            vergi_no_clean = vergi_no.replace('-', '').replace(' ', '')
+            if not vergi_no_clean.isdigit():
+                errors['vergi_no'] = 'Vergi numarası sadece rakam içermelidir.'
+        
+        # Telefon format validation (Türkiye telefon formatı)
+        telefon = cleaned_data.get('telefon')
+        if telefon:
+            telefon_clean = telefon.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            if not telefon_clean.startswith('0') or len(telefon_clean) != 11:
+                errors['telefon'] = 'Geçerli bir Türkiye telefon numarası giriniz (05XX XXX XX XX).'
+            elif not telefon_clean.isdigit():
+                errors['telefon'] = 'Telefon numarası sadece rakam içermelidir.'
+        
+        # Risk limiti kontrolü
+        risk_limiti = cleaned_data.get('risk_limiti')
+        if risk_limiti is not None and risk_limiti < 0:
+            errors['risk_limiti'] = 'Risk limiti negatif olamaz.'
+        
+        if errors:
+            raise ValidationError(errors)
+        
+        return cleaned_data
 
 
 class CariHareketiForm(forms.ModelForm):

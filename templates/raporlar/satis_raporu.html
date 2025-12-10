@@ -23,7 +23,8 @@
                     <select name="cari" class="form-select">
                         <option value="">Tüm Cariler</option>
                         {% for c in cariler %}
-                        <option value="{{ c.pk }}" {% if cari_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.ad_soyad }}</option>
+                        <option value="{{ c.pk }}" {% if cari_id == c.pk|stringformat:"s" %}selected{% endif %}>{{
+                            c.ad_soyad }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -109,7 +110,8 @@
                         <td>{{ fatura.cari.ad_soyad|default:"-" }}</td>
                         <td>{{ fatura.genel_toplam|floatformat:2 }} ₺</td>
                         <td>
-                            <span class="badge {% if fatura.durum == 'Odendi' %}bg-success{% elif fatura.durum == 'Iptal' %}bg-danger{% else %}bg-warning{% endif %}">
+                            <span
+                                class="badge {% if fatura.durum == 'KasadanKapanacak' %}bg-success{% elif fatura.durum == 'AcikHesap' %}bg-warning{% else %}bg-secondary{% endif %}">
                                 {{ fatura.get_durum_display }}
                             </span>
                         </td>
@@ -132,4 +134,3 @@
     </div>
 </div>
 {% endblock %}
-

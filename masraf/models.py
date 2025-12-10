@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from decimal import Decimal
 
 
@@ -52,3 +54,22 @@ class Masraf(models.Model):
 
     def __str__(self):
         return f"{self.masraf_no} - {self.aciklama[:50]} - {self.tutar} ₺"
+    
+    def clean(self):
+        """Model-level validation for Masraf."""
+        errors = {}
+        
+        # Tutar kontrolü
+        if self.tutar < 0:
+            errors['tutar'] = 'Tutar negatif olamaz.'
+        
+        # Tarih gelecek tarih kontrolü
+        if self.tarih and self.tarih > timezone.now().date():
+            errors['tarih'] = 'Gelecek tarih seçilemez.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()  # clean() metodunu çağır
+        super().save(*args, **kwargs)

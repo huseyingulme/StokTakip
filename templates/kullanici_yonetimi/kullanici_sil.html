@@ -6,16 +6,45 @@
 <div class="card">
     <div class="card-header"><h5><i class="bi bi-exclamation-triangle"></i> Kullanıcı Sil</h5></div>
     <div class="card-body">
-        <p>Bu kullanıcıyı silmek (pasif yapmak) istediğinizden emin misiniz?</p>
-        <div class="alert alert-warning">
+        <p>Bu kullanıcı için ne yapmak istersiniz?</p>
+        <div class="alert alert-info">
             <strong>{{ kullanici.username }}</strong><br>
-            <small>Ad Soyad: {{ kullanici.get_full_name|default:"-" }}<br>E-posta: {{ kullanici.email|default:"-" }}<br>
-            {% if fatura_sayisi > 0 %}<span class="text-danger">Bu kullanıcının {{ fatura_sayisi }} adet faturası bulunmaktadır. Kullanıcı pasif yapılacak ancak faturaları korunacaktır.</span>{% endif %}
+            <small>
+                Ad Soyad: {{ kullanici.get_full_name|default:"-" }}<br>
+                E-posta: {{ kullanici.email|default:"-" }}<br>
+                Durum: {% if kullanici.is_active %}<span class="badge bg-success">Aktif</span>{% else %}<span class="badge bg-secondary">Pasif</span>{% endif %}
             </small>
         </div>
-        <form method="post">{% csrf_token %}
-            <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Evet, Pasif Yap</button>
-            <a href="{% url 'kullanici_yonetimi:kullanici_listesi' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> İptal</a>
+        
+        {% if toplam_iliskili_kayit > 0 %}
+        <div class="alert alert-warning">
+            <h6><i class="bi bi-info-circle"></i> İlişkili Kayıtlar:</h6>
+            <ul class="mb-0">
+                {% if fatura_sayisi > 0 %}<li>{{ fatura_sayisi }} adet fatura</li>{% endif %}
+                {% if masraf_sayisi > 0 %}<li>{{ masraf_sayisi }} adet masraf</li>{% endif %}
+                {% if finans_hareket_sayisi > 0 %}<li>{{ finans_hareket_sayisi }} adet finans hareketi</li>{% endif %}
+                {% if cari_not_sayisi > 0 %}<li>{{ cari_not_sayisi }} adet cari notu</li>{% endif %}
+            </ul>
+            <small class="text-danger">
+                <strong>Uyarı:</strong> Kullanıcıyı tamamen silerseniz, bu kayıtların bazıları etkilenebilir. 
+                Pasif yapmak daha güvenlidir.
+            </small>
+        </div>
+        {% endif %}
+        
+        <form method="post" id="deleteForm">{% csrf_token %}
+            <div class="d-grid gap-2">
+                <button type="submit" name="action" value="pasif" class="btn btn-warning">
+                    <i class="bi bi-person-x"></i> Pasif Yap (Önerilen)
+                </button>
+                <button type="submit" name="action" value="sil" class="btn btn-danger" 
+                        onclick="return confirm('Bu kullanıcıyı tamamen silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">
+                    <i class="bi bi-trash"></i> Tamamen Sil
+                </button>
+                <a href="{% url 'kullanici_yonetimi:kullanici_listesi' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+            </div>
         </form>
     </div>
 </div>

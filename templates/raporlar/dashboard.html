@@ -9,7 +9,7 @@
 <div class="welcome-banner mb-4">
     <div class="row align-items-center">
         <div class="col-md-8">
-            <h3 class="mb-1">Hoş Geldiniz, <span class="text-primary">{{ user.first_name|default:user.username }}!</span></h3>
+            <h3 class="mb-1">Hoş Geldiniz, <span class="text-primary">{% if user.first_name and user.last_name %}{{ user.first_name }} {{ user.last_name }}{% elif user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}!</span></h3>
             <p class="text-muted mb-0">{{ "now"|date:"l, d F Y" }}</p>
         </div>
         <div class="col-md-4 text-end">
@@ -271,9 +271,10 @@
                                 <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-warning">{{ fatura.vade_tarihi|date:"d.m.Y" }}</span>
+                                <span class="badge bg-warning">{{ fatura.fatura_tarihi|date:"d.m.Y" }}</span>
                                 <br>
-                                <small class="text-muted"><strong>{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></small>
+                                <small class="text-muted"><strong>{{ fatura.genel_toplam|floatformat:2 }}
+                                        ₺</strong></small>
                             </div>
                         </div>
                     </div>
@@ -386,6 +387,7 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_head %}
@@ -403,7 +405,7 @@
         background: white;
         border-radius: 15px;
         padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         display: flex;
         align-items: center;
         gap: 20px;
@@ -424,7 +426,7 @@
 
     .stat-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 
     .stat-card:hover::before {
@@ -432,11 +434,25 @@
         opacity: 0.1;
     }
 
-    .stat-primary::before { background: #667eea; }
-    .stat-success::before { background: #28a745; }
-    .stat-warning::before { background: #ffc107; }
-    .stat-danger::before { background: #dc3545; }
-    .stat-info::before { background: #17a2b8; }
+    .stat-primary::before {
+        background: #667eea;
+    }
+
+    .stat-success::before {
+        background: #28a745;
+    }
+
+    .stat-warning::before {
+        background: #ffc107;
+    }
+
+    .stat-danger::before {
+        background: #dc3545;
+    }
+
+    .stat-info::before {
+        background: #17a2b8;
+    }
 
     .stat-icon {
         width: 60px;
@@ -450,11 +466,25 @@
         flex-shrink: 0;
     }
 
-    .stat-primary .stat-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .stat-success .stat-icon { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
-    .stat-warning .stat-icon { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
-    .stat-danger .stat-icon { background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%); }
-    .stat-info .stat-icon { background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%); }
+    .stat-primary .stat-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .stat-success .stat-icon {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .stat-warning .stat-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .stat-danger .stat-icon {
+        background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%);
+    }
+
+    .stat-info .stat-icon {
+        background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%);
+    }
 
     .stat-content {
         flex: 1;
@@ -502,7 +532,7 @@
         background: white;
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         display: flex;
         align-items: center;
         gap: 15px;
@@ -511,7 +541,7 @@
 
     .mini-stat-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
     }
 
     .mini-stat-icon {
@@ -559,133 +589,136 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Satış Grafiği
-    const satisCtx = document.getElementById('satisGrafik');
-    if (satisCtx) {
-        const satisData = {{ son_6_ay_satis|safe }};
-        if (satisData && satisData.length > 0) {
-            new Chart(satisCtx, {
-                type: 'line',
-                data: {
-                    labels: satisData.map(item => item.ay_adi),
-                    datasets: [{
-                        label: 'Satış (₺)',
-                        data: satisData.map(item => item.satis),
-                        borderColor: 'rgb(102, 126, 234)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        pointBackgroundColor: 'rgb(102, 126, 234)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            padding: 12,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
-                                }
-                            }
-                        }
+    document.addEventListener('DOMContentLoaded', function () {
+        // Satış Grafiği
+        const satisCtx = document.getElementById('satisGrafik');
+        if (satisCtx) {
+            const satisData = {{ son_6_ay_satis| safe
+        }
+    };
+    if (satisData && satisData.length > 0) {
+        new Chart(satisCtx, {
+            type: 'line',
+            data: {
+                labels: satisData.map(item => item.ay_adi),
+                datasets: [{
+                    label: 'Satış (₺)',
+                    data: satisData.map(item => item.satis),
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: 'rgb(102, 126, 234)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toLocaleString('tr-TR') + ' ₺';
-                                },
-                                font: { size: 11 }
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.05)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 11 }
-                            },
-                            grid: {
-                                display: false
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function (context) {
+                                return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
                             }
                         }
                     }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return value.toLocaleString('tr-TR') + ' ₺';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
                 }
-            });
-        }
+            }
+        });
     }
-    
+    }
+
     // Kategori Dağılım Grafiği
     const kategoriCtx = document.getElementById('kategoriGrafik');
     if (kategoriCtx) {
-        const kategoriData = {{ urun_kategori_dagilimi|safe }};
-        if (kategoriData && Object.keys(kategoriData).length > 0) {
-            const labels = Object.keys(kategoriData);
-            const data = Object.values(kategoriData);
-            const colors = [
-                'rgba(102, 126, 234, 0.8)',
-                'rgba(40, 167, 69, 0.8)',
-                'rgba(255, 193, 7, 0.8)',
-                'rgba(220, 53, 69, 0.8)',
-                'rgba(23, 162, 184, 0.8)',
-                'rgba(108, 117, 125, 0.8)',
-                'rgba(255, 87, 34, 0.8)',
-                'rgba(156, 39, 176, 0.8)'
-            ];
-            
-            new Chart(kategoriCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors.slice(0, labels.length),
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                font: { size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            padding: 12,
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return label + ': ' + value + ' (' + percentage + '%)';
-                                }
+        const kategoriData = {{ urun_kategori_dagilimi| safe
+    }};
+    if (kategoriData && Object.keys(kategoriData).length > 0) {
+        const labels = Object.keys(kategoriData);
+        const data = Object.values(kategoriData);
+        const colors = [
+            'rgba(102, 126, 234, 0.8)',
+            'rgba(40, 167, 69, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(23, 162, 184, 0.8)',
+            'rgba(108, 117, 125, 0.8)',
+            'rgba(255, 87, 34, 0.8)',
+            'rgba(156, 39, 176, 0.8)'
+        ];
+
+        new Chart(kategoriCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
                             }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
+    }
     }
 });
 </script>

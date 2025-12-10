@@ -13,7 +13,12 @@ def role_required(*role_names):
             
             user_groups = request.user.groups.values_list('name', flat=True)
             if not any(role in user_groups for role in role_names):
-                raise PermissionDenied("Bu işlem için yetkiniz yok.")
+                # Daha açıklayıcı hata mesajı
+                if len(role_names) == 1:
+                    role_text = role_names[0]
+                else:
+                    role_text = f"{', '.join(role_names[:-1])} veya {role_names[-1]}"
+                raise PermissionDenied(f"Bu işlem için {role_text} yetkisi gereklidir.")
             
             return view_func(request, *args, **kwargs)
         return wrapper

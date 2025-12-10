@@ -1,26 +1,53 @@
 {% extends "base.html" %}
-{% load form_tags %}
 {% block title %}Ürün Sil - {{ urun.ad }}{% endblock %}
 {% block page_title %}Ürün Sil{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h5>Ürün Sil</h5>
+        <h5><i class="bi bi-exclamation-triangle"></i> Ürün Sil</h5>
     </div>
     <div class="card-body">
         <p>Bu ürünü silmek istediğinizden emin misiniz?</p>
-        <div class="alert alert-warning">
-            <strong>{{ urun.ad }}</strong> - {{ urun.fiyat|floatformat:2 }} ₺
+        <div class="alert alert-info">
+            <strong>{{ urun.ad }}</strong><br>
+            <small>
+                Kategori: {{ urun.kategori|default:"-" }}<br>
+                Birim: {{ urun.birim }}<br>
+                Satış Fiyatı: {{ urun.fiyat|floatformat:2 }} ₺<br>
+                Barkod: {{ urun.barkod|default:"-" }}
+            </small>
         </div>
-        <form method="post">
+
+        {% if toplam_iliskili_kayit > 0 %}
+        <div class="alert alert-warning">
+            <h6><i class="bi bi-info-circle"></i> İlişkili Kayıtlar:</h6>
+            <ul class="mb-0">
+                {% if fatura_kalem_sayisi > 0 %}
+                <li>{{ fatura_kalem_sayisi }} adet fatura kalemi (ürün referansı NULL olacak)</li>
+                {% endif %}
+                {% if stok_hareket_sayisi > 0 %}
+                <li>{{ stok_hareket_sayisi }} adet stok hareketi (tamamen silinecek)</li>
+                {% endif %}
+            </ul>
+            <small class="text-danger">
+                <strong>Uyarı:</strong> Bu ürünü silerseniz, ilişkili kayıtlar da etkilenecektir.
+                Fatura kalemlerindeki ürün referansı NULL olacak, stok hareketleri ise tamamen silinecektir.
+            </small>
+        </div>
+        {% endif %}
+
+        <form method="post" id="deleteForm">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">
-                <i class="bi bi-trash"></i> Evet, Sil
-            </button>
-            <a href="{% url 'stok:index' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> İptal
-            </a>
+            <div class="d-grid gap-2">
+                <button type="submit" name="action" value="sil" class="btn btn-danger"
+                    onclick="return confirm('Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">
+                    <i class="bi bi-trash"></i> Evet, Sil
+                </button>
+                <a href="{% url 'stok:index' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> İptal
+                </a>
+            </div>
         </form>
     </div>
 </div>

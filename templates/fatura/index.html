@@ -22,8 +22,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-3">
                     <label class="form-label">Arama</label>
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="Fatura no, cari adı..." value="{{ search_query }}">
+                    <input type="text" name="search" class="form-control" placeholder="Fatura no, cari adı..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Fatura Tipi</label>
@@ -37,9 +36,8 @@
                     <label class="form-label">Durum</label>
                     <select name="durum" class="form-select">
                         <option value="">Tüm Durumlar</option>
-                        <option value="Beklemede" {% if durum_filter == 'Beklemede' %}selected{% endif %}>Beklemede</option>
-                        <option value="Odendi" {% if durum_filter == 'Odendi' %}selected{% endif %}>Ödendi</option>
-                        <option value="Iptal" {% if durum_filter == 'Iptal' %}selected{% endif %}>İptal</option>
+                        <option value="AcikHesap" {% if durum_filter == 'AcikHesap' %}selected{% endif %}>Açık Hesap</option>
+                        <option value="KasadanKapanacak" {% if durum_filter == 'KasadanKapanacak' %}selected{% endif %}>Kasadan Kapanacak</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -71,80 +69,9 @@
             </div>
         </form>
 
-        {% if faturalar %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Fatura No</th>
-                        <th>Tarih</th>
-                        <th>Cari</th>
-                        <th>Tip</th>
-                        <th>Genel Toplam</th>
-                        <th>Durum</th>
-                        <th>İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for fatura in faturalar %}
-                    <tr>
-                        <td><strong>{{ fatura.fatura_no }}</strong></td>
-                        <td>{{ fatura.fatura_tarihi|date:"d.m.Y" }}</td>
-                        <td>{{ fatura.cari.ad_soyad|default:"-" }}</td>
-                        <td>
-                            <span class="badge {% if fatura.fatura_tipi == 'Satis' %}bg-success{% else %}bg-warning{% endif %}">
-                                {{ fatura.get_fatura_tipi_display }}
-                            </span>
-                        </td>
-                        <td>{{ fatura.genel_toplam|floatformat:2 }} ₺</td>
-                        <td>
-                            <span class="badge {% if fatura.durum == 'Odendi' %}bg-success{% elif fatura.durum == 'Iptal' %}bg-danger{% else %}bg-warning{% endif %}">
-                                {{ fatura.get_durum_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'fatura:detay' fatura.pk %}" class="btn btn-sm btn-info" title="Detay">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{% url 'fatura:sil' fatura.pk %}" class="btn btn-sm btn-danger" title="Sil">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if faturalar.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if faturalar.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}{% if durum_filter %}&durum={{ durum_filter }}{% endif %}">İlk</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ faturalar.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}{% if durum_filter %}&durum={{ durum_filter }}{% endif %}">Önceki</a>
-                </li>
-                {% endif %}
-                <li class="page-item active">
-                    <span class="page-link">Sayfa {{ faturalar.number }} / {{ faturalar.paginator.num_pages }}</span>
-                </li>
-                {% if faturalar.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ faturalar.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}{% if durum_filter %}&durum={{ durum_filter }}{% endif %}">Sonraki</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ faturalar.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tip_filter %}&tip={{ tip_filter }}{% endif %}{% if durum_filter %}&durum={{ durum_filter }}{% endif %}">Son</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-
+        {% if has_data %}
+        {{ table_html|safe }}
+        {{ pagination_html|safe }}
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-receipt" style="font-size: 3rem; color: #ccc;"></i>

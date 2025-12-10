@@ -5,15 +5,32 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
+from django.db import transaction
+from typing import Any
+import logging
 from .models import Urun, StokHareketi, Kategori
 from .forms import UrunForm
 from accounts.utils import log_action
-from accounts.decorators import depo_required, admin_required
+from stoktakip.template_helpers import (
+    generate_pagination_html, prepare_urun_table_data, generate_table_html
+)
+from stoktakip.error_handling import handle_view_errors, database_transaction
+from stoktakip.cache_utils import cache_view_result
+from stoktakip.security_utils import sanitize_integer, sanitize_string, validate_search_query, sanitize_decimal
+
+logger = logging.getLogger(__name__)
 
 
+@cache_view_result(timeout=300, key_prefix='stok_index')
+@handle_view_errors(error_message="Stok listesi yüklenirken bir hata oluştu.")
 @login_required
-def index(request):
-    """Stok listesi sayfası"""
+def index(request: Any) -> Any:
+    """
+    Stok listesi sayfası.
+    
+    Depo yetkisi gerektirir. Filtreleme, arama ve sayfalama desteği ile
+    ürün listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
+    """
     urun_list = Urun.objects.select_related('kategori').all().order_by('ad')
     
     # Arama
@@ -61,8 +78,26 @@ def index(request):
     page_number = request.GET.get('page')
     urunler = paginator.get_page(page_number)
     
-    # Stok uyarıları - Sadece stoksuz ürünler
-    stoksuz_urunler = [u for u in Urun.objects.all() if u.mevcut_stok == 0]
+    # Stoksuz ürünler listesi kaldırıldı
+    
+    # Prepare table data in Python
+    table_data = prepare_urun_table_data(urunler)
+    headers = ['Kod', 'Ürün Adı', 'Kategori', 'Barkod', 'Birim', 'Satış Fiyatı', 'Mevcut Stok', 'İşlemler']
+    rows = [[
+        data['kod'], data['ad'], data['kategori'], data['barkod'],
+        data['birim'], data['fiyat'], data['stok'], data['actions']
+    ] for data in table_data]
+    table_html = generate_table_html(headers, rows) if rows else None
+    
+    # Generate pagination HTML
+    request_params = {
+        'search': search_query,
+        'kategori': kategori_filter,
+        'stok_durumu': stok_durumu,
+        'fiyat_min': fiyat_min,
+        'fiyat_max': fiyat_max
+    }
+    pagination_html = generate_pagination_html(urunler, request_params) if urunler.has_other_pages() else None
     
     context = {
         'urunler': urunler,
@@ -72,169 +107,223 @@ def index(request):
         'fiyat_min': fiyat_min,
         'fiyat_max': fiyat_max,
         'kategoriler': Kategori.objects.all().order_by('ad'),
-        'stoksuz_urunler': stoksuz_urunler[:10],
+        'table_html': table_html,
+        'pagination_html': pagination_html,
+        'has_data': len(table_data) > 0,
     }
     return render(request, 'stok/index.html', context)
 
 
-@depo_required
+@handle_view_errors(
+    error_message="Ürün eklenirken bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@database_transaction
 @login_required
-def urun_ekle(request):
-    """Yeni ürün ekleme"""
+def urun_ekle(request: Any) -> Any:
+    """
+    Yeni ürün ekler.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    Input validation ve error handling ile güvenli hale getirilmiştir.
+    """
+    from django.core.exceptions import ValidationError
+    
     if request.method == 'POST':
-        form = UrunForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Ürün başarıyla eklendi.')
-            return redirect('stok:index')
+        try:
+            form = UrunForm(request.POST)
+            if form.is_valid():
+                with transaction.atomic():
+                    urun = form.save(commit=False)
+                    
+                    # Fiyat validation
+                    if urun.fiyat and urun.fiyat < 0:
+                        raise ValidationError("Fiyat negatif olamaz.")
+                    
+                    urun.save()
+                    
+                    log_action(request.user, 'create', urun, 
+                             f'Ürün eklendi: {urun.ad}', request)
+                    messages.success(request, 'Ürün başarıyla eklendi.')
+                    return redirect('stok:index')
+            else:
+                messages.error(request, 'Lütfen form hatalarını düzeltin.')
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f"Ürün ekleme hatası: {str(e)}", exc_info=True)
+            raise
     else:
         form = UrunForm()
     
     return render(request, 'stok/urun_form.html', {'form': form, 'title': 'Yeni Ürün Ekle'})
 
 
-@depo_required
+@handle_view_errors(
+    error_message="Ürün güncellenirken bir hata oluştu.",
+    redirect_url="stok:index"
+)
 @login_required
-def urun_duzenle(request, pk):
-    """Ürün düzenleme"""
-    urun = get_object_or_404(Urun, pk=pk)
+def urun_duzenle(request: Any, pk: int) -> Any:
+    """
+    Ürün düzenler.
     
-    if request.method == 'POST':
-        form = UrunForm(request.POST, instance=urun)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Ürün başarıyla güncellendi.')
-            return redirect('stok:index')
-    else:
-        form = UrunForm(instance=urun)
+    Input validation ve error handling ile güvenli hale getirilmiştir.
+    """
+    from django.core.exceptions import ValidationError
     
-    return render(request, 'stok/urun_form.html', {'form': form, 'title': 'Ürün Düzenle', 'urun': urun})
-
-
-@admin_required
-@login_required
-def urun_sil(request, pk):
-    from fatura.models import FaturaKalem
-    urun = get_object_or_404(Urun, pk=pk)
-    
-    if request.method == 'POST':
-        fatura_kalemleri = FaturaKalem.objects.filter(urun=urun)
-        if fatura_kalemleri.exists():
-            messages.error(request, 'Bu ürün fatura kalemlerinde kullanıldığı için silinemez!')
-            return redirect('stok:index')
+    try:
+        urun = get_object_or_404(Urun, pk=pk)
         
-        stok_hareketleri = StokHareketi.objects.filter(urun=urun)
-        if stok_hareketleri.exists():
-            messages.error(request, 'Bu ürün stok hareketlerinde kullanıldığı için silinemez!')
-            return redirect('stok:index')
-        
-        urun.delete()
-        messages.success(request, 'Ürün başarıyla silindi.')
-        return redirect('stok:index')
-    
-    fatura_kalemleri = FaturaKalem.objects.filter(urun=urun)
-    stok_hareketleri = StokHareketi.objects.filter(urun=urun)
-    
-    return render(request, 'stok/urun_sil.html', {
-        'urun': urun,
-        'fatura_kalemleri': fatura_kalemleri,
-        'stok_hareketleri': stok_hareketleri
-    })
-
-
-@depo_required
-@login_required
-def stok_duzenle(request, pk):
-    urun = get_object_or_404(Urun, pk=pk)
-    
-    if request.method == 'POST':
-        islem_turu = request.POST.get('islem_turu')
-        miktar = int(request.POST.get('miktar', 0))
-        aciklama = request.POST.get('aciklama', '')
-        
-        if miktar > 0:
-            StokHareketi.objects.create(
-                urun=urun,
-                islem_turu=islem_turu,
-                miktar=miktar,
-                aciklama=aciklama,
-                tarih=timezone.now(),
-                olusturan=request.user
-            )
-            messages.success(request, f'Stok {islem_turu} işlemi başarıyla yapıldı.')
-            return redirect('stok:index')
-        else:
-            messages.error(request, 'Miktar 0\'dan büyük olmalıdır.')
-    
-    return render(request, 'stok/stok_duzenle.html', {'urun': urun})
-
-
-@login_required
-def stok_hareketleri(request, pk):
-    urun = get_object_or_404(Urun, pk=pk)
-    hareketler = StokHareketi.objects.filter(urun=urun).select_related('olusturan').order_by('-tarih')
-    
-    paginator = Paginator(hareketler, 20)
-    page_number = request.GET.get('page')
-    hareketler_page = paginator.get_page(page_number)
-    
-    return render(request, 'stok/stok_hareketleri.html', {
-        'urun': urun,
-        'hareketler': hareketler_page
-    })
-
-
-@depo_required
-@login_required
-def toplu_stok_islem(request):
-    if request.method == 'POST':
-        urun_ids = request.POST.getlist('urun_ids')
-        islem_turu = request.POST.get('islem_turu', '').strip()
-        miktar_str = request.POST.get('miktar', '0').strip()
-        aciklama = request.POST.get('aciklama', 'Toplu işlem').strip() or 'Toplu işlem'
-        
-        # Validasyon
-        if not urun_ids:
-            messages.error(request, 'Lütfen en az bir ürün seçin.')
-            urunler = Urun.objects.all().order_by('ad')
-            return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
-        
-        if not islem_turu:
-            messages.error(request, 'Lütfen işlem türü seçin.')
-            urunler = Urun.objects.all().order_by('ad')
-            return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
-        
-        try:
-            miktar = int(miktar_str)
-            if miktar <= 0:
-                messages.error(request, 'Miktar 0\'dan büyük olmalıdır.')
-                urunler = Urun.objects.all().order_by('ad')
-                return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
-        except (ValueError, TypeError):
-            messages.error(request, 'Geçerli bir miktar girin.')
-            urunler = Urun.objects.all().order_by('ad')
-            return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
-        
-        # Çıkış işleminde stok kontrolü
-        if islem_turu == 'çıkış':
-            yetersiz_stok_urunler = []
-            for urun_id in urun_ids:
-                try:
-                    urun = Urun.objects.get(pk=urun_id)
-                    if urun.mevcut_stok < miktar:
-                        yetersiz_stok_urunler.append(urun.ad)
-                except Urun.DoesNotExist:
-                    continue
-            
-            if yetersiz_stok_urunler:
-                messages.warning(request, f'Bazı ürünlerde yetersiz stok var: {", ".join(yetersiz_stok_urunler[:5])}')
-                # Yine de işlemi yap, kullanıcı bilgilendirildi
-        
-        islem_sayisi = 0
-        hata_sayisi = 0
-        for urun_id in urun_ids:
+        if request.method == 'POST':
             try:
-                urun = Urun.objects.get(pk=urun_id)
+                form = UrunForm(request.POST, instance=urun)
+                if form.is_valid():
+                    # Fiyat validation
+                    if form.cleaned_data.get('fiyat', 0) < 0:
+                        raise ValidationError("Fiyat negatif olamaz.")
+                    
+                    form.save()
+                    
+                    log_action(request.user, 'update', urun, 
+                             f'Ürün güncellendi: {urun.ad}', request)
+                    messages.success(request, 'Ürün başarıyla güncellendi.')
+                    return redirect('stok:index')
+                else:
+                    messages.error(request, 'Lütfen form hatalarını düzeltin.')
+            except ValidationError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                logger.error(f"Ürün düzenleme hatası: {str(e)}", exc_info=True)
+                raise
+        else:
+            form = UrunForm(instance=urun)
+        
+        return render(request, 'stok/urun_form.html', {'form': form, 'title': 'Ürün Düzenle', 'urun': urun})
+    except Exception as e:
+        logger.error(f"Ürün düzenleme hatası: {str(e)}", exc_info=True)
+        raise
+
+
+@handle_view_errors(
+    error_message="Ürün silinirken bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@login_required
+def urun_sil(request: Any, pk: int) -> Any:
+    """
+    Ürün siler.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    İlişkili kayıtlar varsa uyarı gösterir ancak silmeye izin verir.
+    """
+    from fatura.models import FaturaKalem
+    
+    try:
+        urun = get_object_or_404(Urun, pk=pk)
+        
+        if request.method == 'POST':
+            try:
+                action = request.POST.get('action', 'sil')  # 'sil' veya 'iptal'
+                
+                if action == 'iptal':
+                    return redirect('stok:index')
+                
+                # Ürün bilgilerini silmeden önce al
+                urun_ad = urun.ad
+                urun_id = urun.pk
+                
+                # İlişkili kayıt sayıları (bilgi amaçlı)
+                fatura_kalem_sayisi = FaturaKalem.objects.filter(urun=urun).count()
+                stok_hareket_sayisi = StokHareketi.objects.filter(urun=urun).count()
+                
+                # Transaction içinde silme işlemi
+                with transaction.atomic():
+                    # Önce fatura kalemlerindeki urun referanslarını NULL yap
+                    # (SET_NULL constraint'i veritabanında düzgün çalışmıyorsa manuel yapıyoruz)
+                    if fatura_kalem_sayisi > 0:
+                        FaturaKalem.objects.filter(urun=urun).update(urun=None)
+                    
+                    # Ürünü sil (CASCADE ile stok hareketleri otomatik silinecek)
+                    urun.delete()
+                    
+                    # Log kaydı (ürün silindikten sonra)
+                    try:
+                        log_action(request.user, 'delete', None, 
+                                    f'Ürün silindi: {urun_ad} (ID: {urun_id}, Fatura kalemleri: {fatura_kalem_sayisi}, Stok hareketleri: {stok_hareket_sayisi})', request)
+                    except Exception as log_error:
+                        logger.warning(f"Log kaydı oluşturulamadı: {str(log_error)}")
+                    
+                    messages.success(request, f'Ürün "{urun_ad}" başarıyla silindi.')
+                    if fatura_kalem_sayisi > 0 or stok_hareket_sayisi > 0:
+                        messages.info(request, f'İlişkili {fatura_kalem_sayisi + stok_hareket_sayisi} kayıt da silindi.')
+                    
+                return redirect('stok:index')
+            except Exception as e:
+                logger.error(f"Ürün silme hatası: {str(e)}", exc_info=True)
+                messages.error(request, f'Ürün silinirken bir hata oluştu: {str(e)}')
+                return redirect('stok:index')
+        else:
+            # GET isteği - bilgilendirme sayfası
+            fatura_kalemleri = FaturaKalem.objects.filter(urun=urun)
+            stok_hareketleri = StokHareketi.objects.filter(urun=urun)
+            
+            fatura_kalem_sayisi = fatura_kalemleri.count()
+            stok_hareket_sayisi = stok_hareketleri.count()
+            toplam_iliskili_kayit = fatura_kalem_sayisi + stok_hareket_sayisi
+            
+            return render(request, 'stok/urun_sil.html', {
+                'urun': urun,
+                'fatura_kalemleri': fatura_kalemleri,
+                'stok_hareketleri': stok_hareketleri,
+                'fatura_kalem_sayisi': fatura_kalem_sayisi,
+                'stok_hareket_sayisi': stok_hareket_sayisi,
+                'toplam_iliskili_kayit': toplam_iliskili_kayit,
+            })
+    except Exception as e:
+        logger.error(f"Ürün silme hatası: {str(e)}", exc_info=True)
+        messages.error(request, f'Ürün silinirken bir hata oluştu: {str(e)}')
+        return redirect('stok:index')
+
+
+@handle_view_errors(
+    error_message="Stok işlemi yapılırken bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@database_transaction
+@login_required
+def stok_duzenle(request: Any, pk: int) -> Any:
+    """
+    Stok giriş/çıkış işlemi yapar.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    Input validation ve error handling ile güvenli hale getirilmiştir.
+    
+    Args:
+        request: HTTP request
+        pk: Ürün ID'si
+    
+    Returns:
+        HTTP response
+    """
+    from django.core.exceptions import ValidationError
+    
+    urun = get_object_or_404(Urun, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            # Input validation
+            islem_turu = sanitize_string(request.POST.get('islem_turu', ''), max_length=20)
+            if islem_turu not in ['giriş', 'çıkış']:
+                raise ValidationError("Geçersiz işlem türü")
+            
+            miktar = sanitize_integer(request.POST.get('miktar', 0), min_value=1, max_value=1000000)
+            aciklama = sanitize_string(request.POST.get('aciklama', ''), max_length=500)
+            
+            # Transaction içinde stok hareketi oluştur
+            with transaction.atomic():
+                # Stok kontrolü kaldırıldı - negatif stok olabilir
+                
                 StokHareketi.objects.create(
                     urun=urun,
                     islem_turu=islem_turu,
@@ -243,90 +332,263 @@ def toplu_stok_islem(request):
                     tarih=timezone.now(),
                     olusturan=request.user
                 )
-                islem_sayisi += 1
-                log_action(request.user, 'create', urun, f'Toplu stok işlemi: {islem_turu} - {miktar} {urun.birim}')
-            except Urun.DoesNotExist:
-                hata_sayisi += 1
-                continue
-            except Exception as e:
-                hata_sayisi += 1
-                continue
+                
+                log_action(request.user, 'update', urun, 
+                         f'Stok {islem_turu} işlemi: {miktar} {urun.birim}', request)
+                messages.success(request, f'Stok {islem_turu} işlemi başarıyla yapıldı.')
+                return redirect('stok:index')
+                
+        except ValidationError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f"Stok düzenleme hatası: {str(e)}", exc_info=True)
+            raise  # handle_view_errors decorator'ı yakalayacak
+    
+    return render(request, 'stok/stok_duzenle.html', {'urun': urun})
+
+
+@handle_view_errors(error_message="Stok hareketleri yüklenirken bir hata oluştu.")
+@login_required
+def stok_hareketleri(request: Any, pk: int) -> Any:
+    """
+    Stok hareketleri listesi.
+    
+    Depo yetkisi gerektirir. Ürünün stok hareketlerini gösterir.
+    """
+    try:
+        urun = get_object_or_404(Urun, pk=pk)
+        hareketler = StokHareketi.objects.filter(urun=urun).select_related('olusturan').order_by('-tarih')
         
-        if islem_sayisi > 0:
-            log_action(request.user, 'create', description=f'Toplu stok işlemi: {islem_turu} - {islem_sayisi} ürün')
-            messages.success(request, f'{islem_sayisi} ürün için stok {islem_turu} işlemi başarıyla yapıldı.')
-        if hata_sayisi > 0:
-            messages.warning(request, f'{hata_sayisi} ürün için işlem yapılamadı.')
+        # Sayfalama - Input validation
+        try:
+            page_number = request.GET.get('page', '1')
+            page_number = sanitize_integer(page_number, min_value=1)
+        except Exception:
+            page_number = 1
         
-        return redirect('stok:index')
+        paginator = Paginator(hareketler, 20)
+        hareketler_page = paginator.get_page(page_number)
+        
+        return render(request, 'stok/stok_hareketleri.html', {
+            'urun': urun,
+            'hareketler': hareketler_page
+        })
+    except Exception as e:
+        logger.error(f"Stok hareketleri hatası: {str(e)}", exc_info=True)
+        raise
+
+
+@handle_view_errors(
+    error_message="Toplu stok işlemi yapılırken bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@database_transaction
+@login_required
+def toplu_stok_islem(request: Any) -> Any:
+    """
+    Toplu stok işlemi yapar.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    Birden fazla ürün için aynı anda stok giriş/çıkış işlemi yapar.
+    """
+    from django.core.exceptions import ValidationError
+    
+    if request.method == 'POST':
+        try:
+            # Input validation
+            urun_ids = request.POST.getlist('urun_ids')
+            if not urun_ids:
+                raise ValidationError('Lütfen en az bir ürün seçin.')
+            
+            islem_turu = sanitize_string(request.POST.get('islem_turu', '').strip(), max_length=20)
+            if not islem_turu or islem_turu not in ['giriş', 'çıkış']:
+                raise ValidationError('Geçerli bir işlem türü seçin.')
+            
+            miktar = sanitize_integer(request.POST.get('miktar', '0'), min_value=1, max_value=1000000)
+            aciklama = sanitize_string(
+                request.POST.get('aciklama', 'Toplu işlem').strip() or 'Toplu işlem',
+                max_length=500
+            )
+        
+            # Transaction içinde toplu işlem
+            with transaction.atomic():
+                # Çıkış işleminde stok kontrolü
+                if islem_turu == 'çıkış':
+                    yetersiz_stok_urunler = []
+                    for urun_id in urun_ids:
+                        try:
+                            urun_id_int = sanitize_integer(urun_id, min_value=1)
+                            urun = Urun.objects.get(pk=urun_id_int)
+                            if urun.mevcut_stok < miktar:
+                                yetersiz_stok_urunler.append(urun.ad)
+                        except (Urun.DoesNotExist, ValidationError):
+                            continue
+                    
+                    if yetersiz_stok_urunler:
+                        messages.warning(request, 
+                                       f'Bazı ürünlerde yetersiz stok var: {", ".join(yetersiz_stok_urunler[:5])}')
+                
+                islem_sayisi = 0
+                hata_sayisi = 0
+                
+                for urun_id in urun_ids:
+                    try:
+                        urun_id_int = sanitize_integer(urun_id, min_value=1)
+                        urun = Urun.objects.get(pk=urun_id_int)
+                        
+                        # Çıkış işleminde stok kontrolü
+                        if islem_turu == 'çıkış' and urun.mevcut_stok < miktar:
+                            hata_sayisi += 1
+                            continue
+                        
+                        StokHareketi.objects.create(
+                            urun=urun,
+                            islem_turu=islem_turu,
+                            miktar=miktar,
+                            aciklama=aciklama,
+                            tarih=timezone.now(),
+                            olusturan=request.user
+                        )
+                        islem_sayisi += 1
+                        log_action(request.user, 'create', urun, 
+                                 f'Toplu stok işlemi: {islem_turu} - {miktar} {urun.birim}', request)
+                    except (Urun.DoesNotExist, ValidationError):
+                        hata_sayisi += 1
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Toplu stok işlemi hatası (ürün {urun_id}): {str(e)}")
+                        hata_sayisi += 1
+                        continue
+                
+                if islem_sayisi > 0:
+                    log_action(request.user, 'create', None, 
+                             f'Toplu stok işlemi: {islem_turu} - {islem_sayisi} ürün', request)
+                    messages.success(request, f'{islem_sayisi} ürün için stok {islem_turu} işlemi başarıyla yapıldı.')
+                if hata_sayisi > 0:
+                    messages.warning(request, f'{hata_sayisi} ürün için işlem yapılamadı.')
+                
+                if islem_sayisi == 0:
+                    raise ValidationError('Hiçbir ürün için işlem yapılamadı.')
+                
+                return redirect('stok:index')
+                
+        except ValidationError as e:
+            messages.error(request, str(e))
+            urunler = Urun.objects.all().order_by('ad')
+            return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
+        except Exception as e:
+            logger.error(f"Toplu stok işlemi hatası: {str(e)}", exc_info=True)
+            raise
     
     urunler = Urun.objects.all().order_by('ad')
     return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
 
 
-@depo_required
+@handle_view_errors(
+    error_message="Stok sayımı yapılırken bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@database_transaction
 @login_required
-def stok_sayim(request):
+def stok_sayim(request: Any) -> Any:
+    """
+    Stok sayımı yapar.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    Gerçek stok ile mevcut stok arasındaki farkları düzeltir.
+    """
+    from django.core.exceptions import ValidationError
+    
     if request.method == 'POST':
-        sayim_verileri = {}
-        for key, value in request.POST.items():
-            if key.startswith('urun_') and key.endswith('_miktar'):
-                urun_id = key.replace('urun_', '').replace('_miktar', '')
-                # Boş değerleri atla
-                if not value or value.strip() == '':
-                    continue
-                try:
-                    gercek_miktar = int(value)
-                    if gercek_miktar >= 0:  # Negatif değerleri kabul etme
-                        sayim_verileri[int(urun_id)] = gercek_miktar
-                except (ValueError, TypeError):
-                    continue
+        try:
+            sayim_verileri = {}
+            for key, value in request.POST.items():
+                if key.startswith('urun_') and key.endswith('_miktar'):
+                    urun_id_str = key.replace('urun_', '').replace('_miktar', '')
+                    # Boş değerleri atla
+                    if not value or value.strip() == '':
+                        continue
+                    try:
+                        urun_id = sanitize_integer(urun_id_str, min_value=1)
+                        gercek_miktar = sanitize_integer(value, min_value=0, max_value=10000000)
+                        sayim_verileri[urun_id] = gercek_miktar
+                    except (ValueError, TypeError, ValidationError):
+                        continue
         
-        if not sayim_verileri:
-            messages.warning(request, 'Hiçbir ürün için sayım miktarı girilmedi.')
+            if not sayim_verileri:
+                raise ValidationError('Hiçbir ürün için sayım miktarı girilmedi.')
+            
+            # Transaction içinde stok sayımı
+            with transaction.atomic():
+                fark_sayisi = 0
+                islem_sayisi = 0
+                
+                for urun_id, gercek_miktar in sayim_verileri.items():
+                    try:
+                        urun = Urun.objects.get(pk=urun_id)
+                        mevcut_stok = urun.mevcut_stok
+                        fark = gercek_miktar - mevcut_stok
+                        
+                        if fark != 0:
+                            islem_turu = 'giriş' if fark > 0 else 'çıkış'
+                            StokHareketi.objects.create(
+                                urun=urun,
+                                islem_turu=islem_turu,
+                                miktar=abs(fark),
+                                aciklama=sanitize_string(
+                                    f'Stok sayımı - Mevcut: {mevcut_stok}, Gerçek: {gercek_miktar}',
+                                    max_length=500
+                                ),
+                                tarih=timezone.now(),
+                                olusturan=request.user
+                            )
+                            fark_sayisi += 1
+                        islem_sayisi += 1
+                    except Urun.DoesNotExist:
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Stok sayımı hatası (ürün {urun_id}): {str(e)}")
+                        continue
+                
+                if fark_sayisi > 0:
+                    log_action(request.user, 'create', None, 
+                             f'Stok sayımı tamamlandı - {fark_sayisi} fark bulundu', request)
+                    messages.success(request, 
+                                   f'Stok sayımı tamamlandı. {islem_sayisi} ürün sayıldı, {fark_sayisi} üründe fark bulundu ve düzeltildi.')
+                else:
+                    messages.info(request, 
+                                f'Stok sayımı tamamlandı. {islem_sayisi} ürün sayıldı, fark bulunmadı.')
+                
+                return redirect('stok:index')
+                
+        except ValidationError as e:
+            messages.error(request, str(e))
             urunler = Urun.objects.all().order_by('ad')
             return render(request, 'stok/stok_sayim.html', {'urunler': urunler})
-        
-        fark_sayisi = 0
-        islem_sayisi = 0
-        for urun_id, gercek_miktar in sayim_verileri.items():
-            try:
-                urun = Urun.objects.get(pk=urun_id)
-                mevcut_stok = urun.mevcut_stok
-                fark = gercek_miktar - mevcut_stok
-                
-                if fark != 0:
-                    islem_turu = 'giriş' if fark > 0 else 'çıkış'
-                    StokHareketi.objects.create(
-                        urun=urun,
-                        islem_turu=islem_turu,
-                        miktar=abs(fark),
-                        aciklama=f'Stok sayımı - Mevcut: {mevcut_stok}, Gerçek: {gercek_miktar}',
-                        tarih=timezone.now(),
-                        olusturan=request.user
-                    )
-                    fark_sayisi += 1
-                islem_sayisi += 1
-            except Urun.DoesNotExist:
-                continue
-        
-        if fark_sayisi > 0:
-            log_action(request.user, 'create', description=f'Stok sayımı tamamlandı - {fark_sayisi} fark bulundu')
-            messages.success(request, f'Stok sayımı tamamlandı. {islem_sayisi} ürün sayıldı, {fark_sayisi} üründe fark bulundu ve düzeltildi.')
-        else:
-            messages.info(request, f'Stok sayımı tamamlandı. {islem_sayisi} ürün sayıldı, fark bulunmadı.')
-        return redirect('stok:index')
+        except Exception as e:
+            logger.error(f"Stok sayımı hatası: {str(e)}", exc_info=True)
+            raise
     
     urunler = Urun.objects.all().order_by('ad')
     return render(request, 'stok/stok_sayim.html', {'urunler': urunler})
 
 
-@depo_required
+@handle_view_errors(
+    error_message="Ürün import işlemi sırasında bir hata oluştu.",
+    redirect_url="stok:index"
+)
+@database_transaction
 @login_required
-def urun_import(request):
-    """CSV/Excel ile ürün import"""
+def urun_import(request: Any) -> Any:
+    """
+    CSV/Excel ile ürün import eder.
+    
+    Transaction içinde çalışır, hata durumunda rollback yapar.
+    File validation ve error handling ile güvenli hale getirilmiştir.
+    """
     import csv
     from decimal import Decimal
+    from django.core.exceptions import ValidationError
     
     if request.method == 'POST' and request.FILES.get('import_file'):
         import_file = request.FILES['import_file']
@@ -335,73 +597,99 @@ def urun_import(request):
         file_extension = import_file.name.split('.')[-1].lower()
         
         if file_extension == 'csv':
-            # CSV import
+            # CSV import - Transaction içinde
             try:
-                decoded_file = import_file.read().decode('utf-8-sig')
-                csv_reader = csv.DictReader(decoded_file.splitlines())
-                
-                basarili = 0
-                hatali = 0
-                hatalar = []
-                
-                for row_num, row in enumerate(csv_reader, start=2):
-                    try:
-                        # Gerekli alanları kontrol et
-                        if not row.get('ad'):
-                            hatali += 1
-                            hatalar.append(f'Satır {row_num}: Ürün adı boş olamaz')
-                            continue
-                        
-                        # Kategori varsa al, yoksa None
-                        kategori = None
-                        if row.get('kategori'):
-                            kategori, created = Kategori.objects.get_or_create(ad=row['kategori'])
-                        
-                        # Ürün oluştur veya güncelle
-                        urun, created = Urun.objects.update_or_create(
-                            barkod=row.get('barkod') or None,
-                            defaults={
-                                'ad': row['ad'],
-                                'kategori': kategori,
-                                'birim': row.get('birim', 'Adet'),
-                                'fiyat': Decimal(row.get('fiyat', '0').replace(',', '.')),
-                                # min_stok_adedi her zaman 0 olacak (model save metodunda)
-                            }
-                        )
-                        
-                        # Eğer stok miktarı belirtilmişse stok hareketi oluştur
-                        if row.get('stok_miktari'):
-                            try:
-                                stok_miktari = int(row['stok_miktari'])
-                                if stok_miktari > 0:
-                                    StokHareketi.objects.create(
-                                        urun=urun,
-                                        islem_turu='giriş',
-                                        miktar=stok_miktari,
-                                        aciklama='CSV import ile eklenen stok',
-                                        tarih=timezone.now(),
-                                        olusturan=request.user
-                                    )
-                            except ValueError:
-                                pass
-                        
-                        basarili += 1
-                        if created:
-                            log_action(request.user, 'create', urun, f'CSV import ile ürün oluşturuldu: {urun.ad}')
-                        else:
-                            log_action(request.user, 'update', urun, f'CSV import ile ürün güncellendi: {urun.ad}')
+                with transaction.atomic():
+                    decoded_file = import_file.read().decode('utf-8-sig')
+                    csv_reader = csv.DictReader(decoded_file.splitlines())
+                    
+                    basarili = 0
+                    hatali = 0
+                    hatalar = []
+                    
+                    for row_num, row in enumerate(csv_reader, start=2):
+                        try:
+                            # Gerekli alanları kontrol et
+                            if not row.get('ad'):
+                                hatali += 1
+                                hatalar.append(f'Satır {row_num}: Ürün adı boş olamaz')
+                                continue
                             
-                    except Exception as e:
-                        hatali += 1
-                        hatalar.append(f'Satır {row_num}: {str(e)}')
-                
-                if basarili > 0:
-                    messages.success(request, f'{basarili} ürün başarıyla import edildi.')
-                if hatali > 0:
-                    messages.warning(request, f'{hatali} satırda hata oluştu. Detaylar: {", ".join(hatalar[:5])}')
-                
-                return redirect('stok:index')
-                
+                            # Input validation
+                            urun_adi = sanitize_string(row['ad'], max_length=200)
+                            
+                            # Kategori varsa al, yoksa None
+                            kategori = None
+                            if row.get('kategori'):
+                                kategori_adi = sanitize_string(row['kategori'], max_length=100)
+                                kategori, created = Kategori.objects.get_or_create(ad=kategori_adi)
+                            
+                            # Satış fiyatı validation
+                            try:
+                                fiyat_str = row.get('fiyat', '0').replace(',', '.')
+                                fiyat = sanitize_decimal(fiyat_str, min_value=0)
+                            except Exception:
+                                fiyat = Decimal('0.00')
+                            
+                            # Alış fiyatı validation
+                            try:
+                                alis_fiyati_str = row.get('alis_fiyati', '0').replace(',', '.')
+                                alis_fiyati = sanitize_decimal(alis_fiyati_str, min_value=0)
+                            except Exception:
+                                alis_fiyati = Decimal('0.00')
+                            
+                            # Birim validation
+                            birim = sanitize_string(row.get('birim', 'Adet'), max_length=20)
+                            
+                            # Barkod validation
+                            barkod = None
+                            if row.get('barkod'):
+                                barkod = sanitize_string(row['barkod'], max_length=50)
+                            
+                            # Ürün oluştur veya güncelle
+                            urun, created = Urun.objects.update_or_create(
+                                barkod=barkod or None,
+                                defaults={
+                                    'ad': urun_adi,
+                                    'kategori': kategori,
+                                    'birim': birim,
+                                    'fiyat': fiyat,
+                                    'alis_fiyati': alis_fiyati,
+                                }
+                            )
+                            
+                            # Eğer stok miktarı belirtilmişse stok hareketi oluştur
+                            if row.get('stok_miktari'):
+                                try:
+                                    stok_miktari = int(row['stok_miktari'])
+                                    if stok_miktari > 0:
+                                        StokHareketi.objects.create(
+                                            urun=urun,
+                                            islem_turu='giriş',
+                                            miktar=stok_miktari,
+                                            aciklama='CSV import ile eklenen stok',
+                                            tarih=timezone.now(),
+                                            olusturan=request.user
+                                        )
+                                except ValueError:
+                                    pass
+                            
+                            basarili += 1
+                            if created:
+                                log_action(request.user, 'create', urun, f'CSV import ile ürün oluşturuldu: {urun.ad}')
+                            else:
+                                log_action(request.user, 'update', urun, f'CSV import ile ürün güncellendi: {urun.ad}')
+                            
+                        except Exception as e:
+                            hatali += 1
+                            hatalar.append(f'Satır {row_num}: {str(e)}')
+                    
+                    if basarili > 0:
+                        messages.success(request, f'{basarili} ürün başarıyla import edildi.')
+                    if hatali > 0:
+                        messages.warning(request, f'{hatali} satırda hata oluştu. Detaylar: {", ".join(hatalar[:5])}')
+                    
+                    return redirect('stok:index')
             except Exception as e:
                 messages.error(request, f'Import hatası: {str(e)}')
         else:

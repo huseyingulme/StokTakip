@@ -63,7 +63,7 @@ class FaturaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Fatura
-        fields = ['id', 'fatura_no', 'cari', 'cari_adi', 'fatura_tarihi', 'vade_tarihi', 
+        fields = ['id', 'fatura_no', 'cari', 'cari_adi', 'fatura_tarihi', 
                   'toplam_tutar', 'kdv_tutari', 'genel_toplam', 'fatura_tipi', 'durum', 
                   'aciklama', 'kalemler', 'olusturma_tarihi']
 

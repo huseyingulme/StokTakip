@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import MasrafKategori, Masraf
 
 
@@ -40,4 +42,24 @@ class MasrafForm(forms.ModelForm):
             'durum': 'Durum',
             'belge_no': 'Belge No',
         }
+    
+    def clean(self):
+        """Custom validation for MasrafForm."""
+        cleaned_data = super().clean()
+        errors = {}
+        
+        # Tutar kontrolü
+        tutar = cleaned_data.get('tutar')
+        if tutar is not None and tutar < 0:
+            errors['tutar'] = 'Tutar negatif olamaz.'
+        
+        # Tarih gelecek tarih kontrolü
+        tarih = cleaned_data.get('tarih')
+        if tarih and tarih > timezone.now().date():
+            errors['tarih'] = 'Gelecek tarih seçilemez.'
+        
+        if errors:
+            raise ValidationError(errors)
+        
+        return cleaned_data
 

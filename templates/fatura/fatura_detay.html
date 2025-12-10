@@ -7,12 +7,6 @@
     <div class="card-header d-flex justify-content-between">
         <h5>Fatura: {{ fatura.fatura_no }}</h5>
         <div>
-            <a href="{% url 'fatura:pdf' fatura.pk %}" class="btn btn-sm btn-info" target="_blank">
-                <i class="bi bi-file-pdf"></i> PDF İndir
-            </a>
-            <a href="{% url 'fatura:onizleme' fatura.pk %}" class="btn btn-sm btn-secondary" target="_blank">
-                <i class="bi bi-eye"></i> Önizle
-            </a>
             <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-sm btn-warning">
                 <i class="bi bi-pencil"></i> Düzenle
             </a>
@@ -30,7 +24,6 @@
             </div>
             <div class="col-md-6">
                 <p><strong>Durum:</strong> {{ fatura.get_durum_display }}</p>
-                <p><strong>Vade Tarihi:</strong> {{ fatura.vade_tarihi|date:"d.m.Y"|default:"-" }}</p>
                 <p><strong>Genel Toplam:</strong> <strong>{{ fatura.genel_toplam|floatformat:2 }} ₺</strong></p>
             </div>
         </div>
@@ -66,7 +59,8 @@
                         <td>{{ kalem.kdv_orani }}%</td>
                         <td>{{ kalem.toplam_tutar|floatformat:2 }} ₺</td>
                         <td>
-                            <a href="{% url 'fatura:kalem_duzenle' kalem.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                            <a href="{% url 'fatura:kalem_duzenle' kalem.pk %}" class="btn btn-sm btn-warning"
+                                title="Düzenle">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <a href="{% url 'fatura:kalem_sil' kalem.pk %}" class="btn btn-sm btn-danger" title="Sil">

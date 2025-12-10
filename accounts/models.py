@@ -10,6 +10,7 @@ class UserProfile(models.Model):
     adres = models.TextField(blank=True, null=True)
     pozisyon = models.CharField(max_length=100, blank=True, null=True)
     olusturma_tarihi = models.DateTimeField(auto_now_add=True)
+    guncelleme_tarihi = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'accounts_userprofile'

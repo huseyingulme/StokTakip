@@ -15,9 +15,12 @@
                 <p><strong>Telefon:</strong> {{ cari.telefon|default:"-" }}</p>
                 <p><strong>E-posta:</strong> {{ cari.email|default:"-" }}</p>
                 <p><strong>Adres:</strong> {{ cari.adres|default:"-" }}</p>
-                <p><strong>Bakiye:</strong> 
-                    <span class="badge {% if cari.bakiye > 0 %}bg-danger{% elif cari.bakiye < 0 %}bg-success{% else %}bg-secondary{% endif %}">
-                        {{ cari.bakiye|floatformat:2 }} ₺
+                <p><strong>Bakiye:</strong>
+                    {# Renk kodlaması: Yeşil = Onun bize borcu var (Negatif), Kırmızı = Bizim ona borcumuz var (Pozitif)
+                    #}
+                    <span
+                        class="badge {% if cari.bakiye > 0 %}bg-danger{% elif cari.bakiye < 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ cari.bakiye|abs|floatformat:2 }} ₺
                     </span>
                 </p>
                 <div class="mt-3">
@@ -90,7 +93,8 @@
                                 <small class="text-muted">{{ notu.olusturma_tarihi|date:"d.m.Y H:i" }}</small>
                             </div>
                             <div>
-                                <a href="{% url 'cari:not_duzenle' notu.pk %}" class="btn btn-sm btn-warning" title="Düzenle">
+                                <a href="{% url 'cari:not_duzenle' notu.pk %}" class="btn btn-sm btn-warning"
+                                    title="Düzenle">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <a href="{% url 'cari:not_sil' notu.pk %}" class="btn btn-sm btn-danger" title="Sil">
@@ -109,4 +113,3 @@
     </div>
 </div>
 {% endblock %}
-

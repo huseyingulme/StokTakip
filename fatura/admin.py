@@ -18,7 +18,7 @@ class FaturaAdmin(admin.ModelAdmin):
     inlines = [FaturaKalemInline]
     fieldsets = (
         ('Fatura Bilgileri', {
-            'fields': ('fatura_no', 'fatura_tarihi', 'vade_tarihi', 'cari', 'fatura_tipi', 'durum')
+            'fields': ('fatura_no', 'fatura_tarihi', 'cari', 'fatura_tipi', 'durum')
         }),
         ('Tutar Bilgileri', {
             'fields': ('toplam_tutar', 'kdv_tutari', 'genel_toplam')
