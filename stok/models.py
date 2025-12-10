@@ -25,6 +25,8 @@ class Urun(models.Model):
     birim = models.CharField(max_length=20, default='Adet', verbose_name="Birim")
     fiyat = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Satış Fiyatı")
     min_stok_adedi = models.IntegerField(default=0, verbose_name="Minimum Stok Seviyesi", editable=False)
+    resim = models.ImageField(upload_to='urunler/', blank=True, null=True, verbose_name="Ürün Resmi")
+    qr_kod = models.ImageField(upload_to='qr_kodlar/', blank=True, null=True, verbose_name="QR Kod")
     olusturma_tarihi = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturma Tarihi")
 
     class Meta:

@@ -8,6 +8,7 @@ from django.db.models import Q
 from .models import Urun, StokHareketi, Kategori
 from .forms import UrunForm
 from accounts.utils import log_action
+from accounts.decorators import depo_required, admin_required
 
 
 @login_required
@@ -76,6 +77,7 @@ def index(request):
     return render(request, 'stok/index.html', context)
 
 
+@depo_required
 @login_required
 def urun_ekle(request):
     """Yeni ürün ekleme"""
@@ -91,6 +93,7 @@ def urun_ekle(request):
     return render(request, 'stok/urun_form.html', {'form': form, 'title': 'Yeni Ürün Ekle'})
 
 
+@depo_required
 @login_required
 def urun_duzenle(request, pk):
     """Ürün düzenleme"""
@@ -108,6 +111,7 @@ def urun_duzenle(request, pk):
     return render(request, 'stok/urun_form.html', {'form': form, 'title': 'Ürün Düzenle', 'urun': urun})
 
 
+@admin_required
 @login_required
 def urun_sil(request, pk):
     from fatura.models import FaturaKalem
@@ -138,6 +142,7 @@ def urun_sil(request, pk):
     })
 
 
+@depo_required
 @login_required
 def stok_duzenle(request, pk):
     urun = get_object_or_404(Urun, pk=pk)
@@ -179,6 +184,7 @@ def stok_hareketleri(request, pk):
     })
 
 
+@depo_required
 @login_required
 def toplu_stok_islem(request):
     if request.method == 'POST':
@@ -258,6 +264,7 @@ def toplu_stok_islem(request):
     return render(request, 'stok/toplu_stok_islem.html', {'urunler': urunler})
 
 
+@depo_required
 @login_required
 def stok_sayim(request):
     if request.method == 'POST':
@@ -314,6 +321,7 @@ def stok_sayim(request):
     return render(request, 'stok/stok_sayim.html', {'urunler': urunler})
 
 
+@depo_required
 @login_required
 def urun_import(request):
     """CSV/Excel ile ürün import"""

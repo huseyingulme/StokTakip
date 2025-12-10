@@ -11,6 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         admin_group, created = Group.objects.get_or_create(name='Admin')
+        mudur_group, created = Group.objects.get_or_create(name='Müdür')
         muhasebe_group, created = Group.objects.get_or_create(name='Muhasebe')
         satis_group, created = Group.objects.get_or_create(name='Satış')
         depo_group, created = Group.objects.get_or_create(name='Depo')
@@ -24,6 +25,7 @@ class Command(BaseCommand):
 
         admin_permissions = Permission.objects.all()
         admin_group.permissions.set(admin_permissions)
+        mudur_group.permissions.set(admin_permissions)  # Müdür grubu da tüm izinlere sahip
 
         muhasebe_permissions = Permission.objects.filter(
             content_type__in=[cari_ct, cari_hareket_ct, fatura_ct]

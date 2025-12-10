@@ -1,0 +1,24 @@
+<div class="card">
+    <div class="card-header">
+        <h5>{{ object_name }} Sil</h5>
+    </div>
+    <div class="card-body">
+        <p>Bu {{ object_name|lower }}i silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ object_display }}</strong>
+            {% if warning_message %}
+                <br><small>{{ warning_message }}</small>
+            {% endif %}
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> {{ button_text }}
+            </button>
+            <a href="{% url cancel_url %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+

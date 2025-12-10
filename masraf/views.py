@@ -7,6 +7,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import MasrafKategori, Masraf
 from .forms import MasrafKategoriForm, MasrafForm
+from accounts.decorators import muhasebe_required
 
 
 @login_required
@@ -54,6 +55,7 @@ def index(request):
     return render(request, 'masraf/index.html', context)
 
 
+@muhasebe_required
 @login_required
 def masraf_ekle(request):
     if request.method == 'POST':
@@ -71,6 +73,7 @@ def masraf_ekle(request):
     return render(request, 'masraf/masraf_form.html', {'form': form, 'title': 'Yeni Masraf Ekle'})
 
 
+@muhasebe_required
 @login_required
 def masraf_duzenle(request, pk):
     masraf = get_object_or_404(Masraf, pk=pk)
@@ -87,6 +90,7 @@ def masraf_duzenle(request, pk):
     return render(request, 'masraf/masraf_form.html', {'form': form, 'title': 'Masraf Düzenle', 'masraf': masraf})
 
 
+@muhasebe_required
 @login_required
 def masraf_sil(request, pk):
     masraf = get_object_or_404(Masraf, pk=pk)

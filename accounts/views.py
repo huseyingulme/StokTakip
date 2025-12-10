@@ -10,6 +10,7 @@ import secrets
 import string
 from .utils import log_action
 from .models import AuditLog
+from .decorators import admin_required
 
 
 def register(request):
@@ -98,6 +99,7 @@ def profile(request):
     return render(request, 'accounts/profile.html', context)
 
 
+@admin_required
 @login_required
 def audit_log_list(request):
     """Audit log görüntüleme sayfası"""

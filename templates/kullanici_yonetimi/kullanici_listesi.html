@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcı Listesi{% endblock %}
+{% block page_title %}Kullanıcı Yönetimi{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-people-fill"></i> Kullanıcı Listesi</h5>
+        <a href="{% url 'kullanici_yonetimi:kullanici_ekle' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-person-plus"></i> Yeni Kullanıcı Ekle
+        </a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <input type="text" name="search" class="form-control" placeholder="Ara..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="durum" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="aktif" {% if is_aktif %}selected{% endif %}>Aktif</option>
+                        <option value="pasif" {% if is_pasif %}selected{% endif %}>Pasif</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Ara</button>
+                </div>
+            </div>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr><th>Kullanıcı Adı</th><th>Ad Soyad</th><th>E-posta</th><th>Durum</th><th>Yetkiler</th><th>İşlemler</th></tr>
+                </thead>
+                <tbody>
+                    {% for k in kullanicilar %}
+                    <tr>
+                        <td><strong>{{ k.username }}</strong>{% if k.is_superuser %} <span class="badge bg-danger">Müdür</span>{% endif %}</td>
+                        <td>{{ k.full_name }}</td>
+                        <td>{{ k.email }}</td>
+                        <td><span class="badge bg-{{ k.durum_badge }}">{{ k.durum_text }}</span></td>
+                        <td>{% if k.yetkiler.is_staff %}<span class="badge bg-info">Personel</span>{% endif %}{% if k.yetkiler.is_superuser %} <span class="badge bg-danger">Superuser</span>{% endif %}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'kullanici_yonetimi:kullanici_detay' k.id %}" class="btn btn-outline-info" title="Analiz"><i class="bi bi-graph-up"></i></a>
+                                <a href="{% url 'kullanici_yonetimi:kullanici_duzenle' k.id %}" class="btn btn-outline-primary" title="Düzenle"><i class="bi bi-pencil"></i></a>
+                                {% if k.id != user.id %}<a href="{% url 'kullanici_yonetimi:kullanici_sil' k.id %}" class="btn btn-outline-danger" title="Pasif Yap"><i class="bi bi-trash"></i></a>{% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">Kullanıcı bulunamadı.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

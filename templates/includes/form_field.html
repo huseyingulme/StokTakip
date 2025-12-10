@@ -1,0 +1,11 @@
+<div class="{{ col_class }}">
+    <label class="form-label">{{ field.label }}</label>
+    {{ field }}
+    {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+    {% endif %}
+    {% if field.errors %}
+        <div class="text-danger small">{{ field.errors }}</div>
+    {% endif %}
+</div>
+

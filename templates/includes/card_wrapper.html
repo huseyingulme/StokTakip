@@ -1,0 +1,17 @@
+{% if title %}
+<div class="card {{ extra_classes }}">
+    <div class="card-header">
+        <h5>{{ title }}</h5>
+    </div>
+    <div class="card-body">
+        {% block card_content %}{% endblock %}
+    </div>
+</div>
+{% else %}
+<div class="card {{ extra_classes }}">
+    <div class="card-body">
+        {% block card_content %}{% endblock %}
+    </div>
+</div>
+{% endif %}
+

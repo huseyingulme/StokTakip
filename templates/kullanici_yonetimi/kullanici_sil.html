@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcı Sil - {{ kullanici.username }}{% endblock %}
+{% block page_title %}Kullanıcı Sil{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5><i class="bi bi-exclamation-triangle"></i> Kullanıcı Sil</h5></div>
+    <div class="card-body">
+        <p>Bu kullanıcıyı silmek (pasif yapmak) istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+            <strong>{{ kullanici.username }}</strong><br>
+            <small>Ad Soyad: {{ kullanici.get_full_name|default:"-" }}<br>E-posta: {{ kullanici.email|default:"-" }}<br>
+            {% if fatura_sayisi > 0 %}<span class="text-danger">Bu kullanıcının {{ fatura_sayisi }} adet faturası bulunmaktadır. Kullanıcı pasif yapılacak ancak faturaları korunacaktır.</span>{% endif %}
+            </small>
+        </div>
+        <form method="post">{% csrf_token %}
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Evet, Pasif Yap</button>
+            <a href="{% url 'kullanici_yonetimi:kullanici_listesi' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> İptal</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

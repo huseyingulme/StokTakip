@@ -50,6 +50,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "accounts.middleware.RateLimitMiddleware",
+    "accounts.middleware.SecurityHeadersMiddleware",
 ]
 
 ROOT_URLCONF = "stoktakip.urls"
@@ -158,3 +160,103 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development 
 # DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@stoktakip.com')
 
 # Error pages (urls.py'de tanımlı)
+
+# Cache Configuration (Redis)
+# Redis bağlantısını test et, yoksa LocMemCache kullan
+REDIS_AVAILABLE = False
+try:
+    import redis
+    r = redis.Redis(host='127.0.0.1', port=6379, db=1, socket_connect_timeout=1, socket_timeout=1)
+    r.ping()
+    REDIS_AVAILABLE = True
+except (ImportError, redis.ConnectionError, redis.TimeoutError, Exception):
+    REDIS_AVAILABLE = False
+
+if REDIS_AVAILABLE:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 1,
+                'SOCKET_TIMEOUT': 1,
+                'IGNORE_EXCEPTIONS': True,  # Redis hatalarını yok say
+            },
+            'KEY_PREFIX': 'stoktakip',
+            'TIMEOUT': 300,  # 5 dakika
+        }
+    }
+    # Session Cache (Redis)
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Redis yoksa local memory cache kullan
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': 300,
+        }
+    }
+    # Session normal session backend kullan (Redis yoksa)
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'stoktakip.log',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'propagate': True,
+        },
+        'stoktakip': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+        },
+    },
+}
+
+# Rate Limiting
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+
+# Celery Configuration (Async tasks için)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE

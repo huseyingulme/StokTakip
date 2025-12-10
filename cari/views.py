@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from .models import Cari, CariHareketi, CariNotu, TahsilatMakbuzu, TediyeMakbuzu
 from .forms import CariForm, CariHareketiForm, CariNotuForm, TahsilatMakbuzuForm, TediyeMakbuzuForm
+from accounts.decorators import muhasebe_required, satis_required
 
 
 @login_required
@@ -45,6 +46,7 @@ def index(request):
     return render(request, 'cari/index.html', context)
 
 
+@satis_required
 @login_required
 def cari_ekle(request):
     if request.method == 'POST':
@@ -59,6 +61,7 @@ def cari_ekle(request):
     return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Yeni Cari Ekle'})
 
 
+@satis_required
 @login_required
 def cari_duzenle(request, pk):
     cari = get_object_or_404(Cari, pk=pk)
@@ -75,6 +78,7 @@ def cari_duzenle(request, pk):
     return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Cari Düzenle', 'cari': cari})
 
 
+@muhasebe_required
 @login_required
 def cari_sil(request, pk):
     cari = get_object_or_404(Cari, pk=pk)
@@ -108,6 +112,7 @@ def cari_detay(request, pk):
     return render(request, 'cari/cari_detay.html', context)
 
 
+@muhasebe_required
 @login_required
 def hareket_ekle(request, cari_pk=None):
     if cari_pk:
@@ -136,6 +141,7 @@ def hareket_ekle(request, cari_pk=None):
     return render(request, 'cari/hareket_form.html', {'form': form, 'title': 'Yeni Hareket Ekle', 'cari': cari})
 
 
+@muhasebe_required
 @login_required
 def hareket_duzenle(request, pk):
     hareket = get_object_or_404(CariHareketi, pk=pk)
@@ -152,6 +158,7 @@ def hareket_duzenle(request, pk):
     return render(request, 'cari/hareket_form.html', {'form': form, 'title': 'Hareket Düzenle', 'hareket': hareket})
 
 
+@muhasebe_required
 @login_required
 def hareket_sil(request, pk):
     hareket = get_object_or_404(CariHareketi, pk=pk)
@@ -494,6 +501,7 @@ def not_sil(request, pk):
     return render(request, 'cari/not_sil.html', {'notu': notu})
 
 
+@muhasebe_required
 @login_required
 def tahsilat_makbuzu_ekle(request, cari_pk=None):
     if cari_pk:
@@ -547,6 +555,7 @@ def tahsilat_makbuzu_listesi(request):
     return render(request, 'cari/tahsilat_makbuzu_listesi.html', context)
 
 
+@muhasebe_required
 @login_required
 def tediye_makbuzu_ekle(request, cari_pk=None):
     if cari_pk:

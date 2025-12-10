@@ -17,6 +17,7 @@ from datetime import datetime
 from .models import Fatura, FaturaKalem
 from .forms import FaturaForm, FaturaKalemForm
 from accounts.utils import log_action
+from accounts.decorators import satis_required, muhasebe_required, admin_required
 from stok.models import Urun
 
 
@@ -83,6 +84,7 @@ def index(request):
     return render(request, 'fatura/index.html', context)
 
 
+@satis_required
 @login_required
 def fatura_ekle(request):
     from decimal import Decimal
@@ -190,6 +192,7 @@ def fatura_detay(request, pk):
     return render(request, 'fatura/fatura_detay.html', context)
 
 
+@satis_required
 @login_required
 def fatura_duzenle(request, pk):
     """Fatura düzenleme"""
@@ -209,6 +212,7 @@ def fatura_duzenle(request, pk):
     return render(request, 'fatura/fatura_form.html', {'form': form, 'title': 'Fatura Düzenle', 'fatura': fatura})
 
 
+@muhasebe_required
 @login_required
 def fatura_sil(request, pk):
     from cari.models import CariHareketi
@@ -236,6 +240,7 @@ def fatura_sil(request, pk):
     return render(request, 'fatura/fatura_sil.html', {'fatura': fatura})
 
 
+@satis_required
 @login_required
 def kalem_ekle(request, fatura_pk):
     fatura = get_object_or_404(Fatura, pk=fatura_pk)
@@ -275,6 +280,7 @@ def urun_bilgi_api(request, urun_id):
         return JsonResponse({'success': False, 'error': 'Ürün bulunamadı'})
 
 
+@satis_required
 @login_required
 def kalem_duzenle(request, pk):
     kalem = get_object_or_404(FaturaKalem, pk=pk)
@@ -298,6 +304,7 @@ def kalem_duzenle(request, pk):
     return render(request, 'fatura/kalem_form.html', {'form': form, 'fatura': fatura, 'kalem': kalem, 'title': 'Kalem Düzenle'})
 
 
+@satis_required
 @login_required
 def kalem_sil(request, pk):
     kalem = get_object_or_404(FaturaKalem, pk=pk)

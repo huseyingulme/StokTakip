@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ kullanici.get_full_name|default:kullanici.username }} - Detay{% endblock %}
-{% block page_title %}<i class="bi bi-person-circle"></i> {{ kullanici.get_full_name|default:kullanici.username }} - Detaylı Analiz{% endblock %}
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-person-circle"></i> {{ kullanici.get_full_name|default:kullanici.username }} - Detaylı
+        Analiz</span>
+    {% if user.is_superuser %}
+    <div class="btn-group">
+        <a href="{% url 'kullanici_yonetimi:kullanici_duzenle' kullanici.id %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-pencil"></i> Düzenle
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
 
 {% block content %}
 <!-- Filtreleme -->
@@ -10,13 +22,12 @@
         <form method="get" class="row g-3">
             <div class="col-md-4">
                 <label for="tarih_baslangic" class="form-label">Başlangıç Tarihi</label>
-                <input type="date" name="tarih_baslangic" id="tarih_baslangic" class="form-control" 
-                       value="{{ tarih_baslangic }}">
+                <input type="date" name="tarih_baslangic" id="tarih_baslangic" class="form-control"
+                    value="{{ tarih_baslangic }}">
             </div>
             <div class="col-md-4">
                 <label for="tarih_bitis" class="form-label">Bitiş Tarihi</label>
-                <input type="date" name="tarih_bitis" id="tarih_bitis" class="form-control" 
-                       value="{{ tarih_bitis }}">
+                <input type="date" name="tarih_bitis" id="tarih_bitis" class="form-control" value="{{ tarih_bitis }}">
             </div>
             <div class="col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">
@@ -188,8 +199,8 @@
     <a href="{% url 'kullanici_yonetimi:index' %}" class="btn btn-secondary">
         <i class="bi bi-arrow-left"></i> Geri Dön
     </a>
-    <a href="{% url 'kullanici_yonetimi:kullanici_rapor' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}" 
-       class="btn btn-primary" target="_blank">
+    <a href="{% url 'kullanici_yonetimi:kullanici_rapor' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}"
+        class="btn btn-primary" target="_blank">
         <i class="bi bi-file-pdf"></i> Detaylı Rapor
     </a>
 </div>
@@ -201,63 +212,65 @@
     .stat-card {
         transition: all 0.3s;
     }
+
     .stat-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('aylikSatisGrafik');
-    if (ctx) {
-        const aylikSatis = {{ aylik_satis|safe }};
-        if (aylikSatis && aylikSatis.length > 0) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: aylikSatis.map(item => item.ay),
-                    datasets: [{
-                        label: 'Satış (₺)',
-                        data: aylikSatis.map(item => item.tutar),
-                        borderColor: 'rgb(102, 126, 234)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
-                                }
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('aylikSatisGrafik');
+        if (ctx) {
+            const aylikSatis = {{ aylik_satis| safe
+        }
+    };
+    if (aylikSatis && aylikSatis.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: aylikSatis.map(item => item.ay),
+                datasets: [{
+                    label: 'Satış (₺)',
+                    data: aylikSatis.map(item => item.tutar),
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
                             }
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toLocaleString('tr-TR') + ' ₺';
-                                }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return value.toLocaleString('tr-TR') + ' ₺';
                             }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
+    }
     }
 });
 </script>
 {% endblock %}
-

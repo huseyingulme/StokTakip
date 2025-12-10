@@ -7,6 +7,7 @@ from django.utils import timezone
 from decimal import Decimal
 from .models import HesapKart, FinansHareketi
 from .forms import HesapKartForm, FinansHareketiForm
+from accounts.decorators import muhasebe_required, admin_required
 
 
 @login_required
@@ -55,6 +56,7 @@ def index(request):
     return render(request, 'finans/index.html', context)
 
 
+@muhasebe_required
 @login_required
 def hesap_ekle(request):
     if request.method == 'POST':
@@ -69,6 +71,7 @@ def hesap_ekle(request):
     return render(request, 'finans/hesap_form.html', {'form': form, 'title': 'Yeni Hesap Ekle'})
 
 
+@muhasebe_required
 @login_required
 def hesap_duzenle(request, pk):
     hesap = get_object_or_404(HesapKart, pk=pk)
@@ -85,6 +88,7 @@ def hesap_duzenle(request, pk):
     return render(request, 'finans/hesap_form.html', {'form': form, 'title': 'Hesap Düzenle', 'hesap': hesap})
 
 
+@admin_required
 @login_required
 def hesap_sil(request, pk):
     hesap = get_object_or_404(HesapKart, pk=pk)
@@ -97,6 +101,7 @@ def hesap_sil(request, pk):
     return render(request, 'finans/hesap_sil.html', {'hesap': hesap})
 
 
+@muhasebe_required
 @login_required
 def hareket_ekle(request):
     if request.method == 'POST':
@@ -114,6 +119,7 @@ def hareket_ekle(request):
     return render(request, 'finans/hareket_form.html', {'form': form, 'title': 'Yeni Finans Hareketi Ekle'})
 
 
+@muhasebe_required
 @login_required
 def hareket_duzenle(request, pk):
     hareket = get_object_or_404(FinansHareketi, pk=pk)
@@ -130,6 +136,7 @@ def hareket_duzenle(request, pk):
     return render(request, 'finans/hareket_form.html', {'form': form, 'title': 'Finans Hareketi Düzenle', 'hareket': hareket})
 
 
+@muhasebe_required
 @login_required
 def hareket_sil(request, pk):
     hareket = get_object_or_404(FinansHareketi, pk=pk)
