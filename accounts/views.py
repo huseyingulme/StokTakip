@@ -16,7 +16,6 @@ import logging
 import re
 from .utils import log_action
 from .models import AuditLog
-from .decorators import admin_required
 from stoktakip.error_handling import handle_view_errors, database_transaction
 from stoktakip.security_utils import sanitize_string, validate_search_query
 

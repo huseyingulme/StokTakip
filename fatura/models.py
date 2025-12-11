@@ -131,19 +131,10 @@ class Fatura(models.Model):
                 if cari_hareket:
                     cari_hareket.delete()
             
-            if is_new:
-                for kalem in self.kalemler.all():
-                    if kalem.urun:
-                        stok_islem_turu = 'giriş' if self.fatura_tipi == 'Alis' else 'çıkış'
-                        # StokHareketi.tarih auto_now_add=True olduğu için tarih parametresi verilmez
-                        StokHareketi.objects.create(
-                            urun=kalem.urun,
-                            islem_turu=stok_islem_turu,
-                            miktar=kalem.miktar,
-                            aciklama=f"Fatura: {self.fatura_no}",
-                            olusturan=olusturan_user or self.olusturan
-                        )
-            else:
+            # Stok hareketleri: Kalemler eklendikten sonra view'larda oluşturulacak
+            # Burada sadece güncelleme durumunda stok hareketlerini güncelle
+            if not is_new:
+                # Mevcut stok hareketlerini sil ve yeniden oluştur
                 StokHareketi.objects.filter(aciklama__startswith=f"Fatura: {self.fatura_no}").delete()
                 for kalem in self.kalemler.all():
                     if kalem.urun:
@@ -158,15 +149,22 @@ class Fatura(models.Model):
                         )
 
     def hesapla_toplamlar(self):
+        from decimal import ROUND_HALF_UP
         kalemler = self.kalemler.all()
         toplam_tutar = kalemler.aggregate(toplam=Sum('toplam_tutar'))['toplam'] or Decimal('0.00')
         kdv_tutari = kalemler.aggregate(toplam=Sum('kdv_tutari'))['toplam'] or Decimal('0.00')
         
-        iskonto_tutari = Decimal('0.00')
-        if self.iskonto_orani > 0:
-            iskonto_tutari = toplam_tutar * (self.iskonto_orani / Decimal('100'))
+        # Genel toplam (KDV dahil) = Ara Toplam + KDV Toplamı
+        genel_toplam_brut = toplam_tutar + kdv_tutari
         
-        genel_toplam = toplam_tutar + kdv_tutari - iskonto_tutari
+        # İskonto genel toplamdan hesaplanır
+        iskonto_tutari = Decimal('0.00')
+        if self.iskonto_orani and self.iskonto_orani > 0:
+            iskonto_tutari = genel_toplam_brut * (self.iskonto_orani / Decimal('100'))
+            iskonto_tutari = iskonto_tutari.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        
+        # Genel toplam = Genel toplam (KDV dahil) - İskonto
+        genel_toplam = genel_toplam_brut - iskonto_tutari
         
         Fatura.objects.filter(pk=self.pk).update(
             toplam_tutar=toplam_tutar,
@@ -217,10 +215,15 @@ class FaturaKalem(models.Model):
             raise ValidationError(errors)
     
     def save(self, *args, **kwargs):
-        from decimal import Decimal
+        from decimal import Decimal, ROUND_HALF_UP
+        # KDV oranı yoksa veya 0 ise, varsayılan %20 yap
+        if not self.kdv_orani or self.kdv_orani == 0:
+            self.kdv_orani = 20
         self.full_clean()  # clean() metodunu çağır
         ara_toplam = Decimal(str(self.birim_fiyat)) * Decimal(str(self.miktar))
-        self.kdv_tutari = ara_toplam * (Decimal(str(self.kdv_orani)) / Decimal('100'))
+        # 2 ondalık basamağa yuvarla
+        ara_toplam = ara_toplam.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        self.kdv_tutari = (ara_toplam * (Decimal(str(self.kdv_orani)) / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         self.toplam_tutar = ara_toplam
         
         if not self.sira_no or self.sira_no == 0:

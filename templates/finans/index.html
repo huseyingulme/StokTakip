@@ -25,7 +25,7 @@
                 <p class="card-text mb-1">
                     <small class="text-muted">{{ hesap.get_hesap_tipi_display }}</small>
                 </p>
-                <h4 class="text-primary">{{ hesap.bakiye|floatformat:2 }} ₺</h4>
+                <h4 class="text-primary">{{ hesap.hesaplanan_bakiye|floatformat:2 }} ₺</h4>
                 <div class="btn-group btn-group-sm">
                     <a href="{% url 'finans:hesap_duzenle' hesap.pk %}" class="btn btn-outline-warning">
                         <i class="bi bi-pencil"></i>

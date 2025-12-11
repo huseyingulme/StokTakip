@@ -122,6 +122,9 @@ class FaturaKalemForm(forms.ModelForm):
         self.fields['urun'].required = False
         # Empty label ekle
         self.fields['urun'].empty_label = 'Seçiniz'
+        # KDV oranı varsayılan değeri 20
+        if not self.instance.pk or not self.instance.kdv_orani or self.instance.kdv_orani == 0:
+            self.fields['kdv_orani'].initial = 20
     
     def clean(self):
         """Custom validation for FaturaKalemForm."""
@@ -138,11 +141,12 @@ class FaturaKalemForm(forms.ModelForm):
         if birim_fiyat is not None and birim_fiyat < 0:
             errors['birim_fiyat'] = 'Birim fiyat negatif olamaz.'
         
-        # KDV oranı kontrolü
+        # KDV oranı kontrolü ve varsayılan değer
         kdv_orani = cleaned_data.get('kdv_orani')
-        if kdv_orani is not None:
-            if kdv_orani < 0 or kdv_orani > 100:
-                errors['kdv_orani'] = 'KDV oranı 0 ile 100 arasında olmalıdır.'
+        if kdv_orani is None or kdv_orani == 0:
+            cleaned_data['kdv_orani'] = 20  # Varsayılan %20
+        elif kdv_orani < 0 or kdv_orani > 100:
+            errors['kdv_orani'] = 'KDV oranı 0 ile 100 arasında olmalıdır.'
         
         if errors:
             raise ValidationError(errors)

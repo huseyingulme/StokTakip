@@ -136,7 +136,8 @@ def index(request: Any) -> Any:
     # Genel istatistikler
     toplam_satis_genel = sum(ist['toplam_satis'] for ist in kullanici_istatistikleri)
     toplam_fatura_genel = sum(ist['fatura_sayisi'] for ist in kullanici_istatistikleri)
-    ortalama_satis_genel = toplam_satis_genel / len(kullanici_istatistikleri) if kullanici_istatistikleri else Decimal('0.00')
+    aktif_kullanici_sayisi = kullanicilar.count()
+    ortalama_satis_genel = toplam_satis_genel / aktif_kullanici_sayisi if aktif_kullanici_sayisi > 0 else Decimal('0.00')
     
     context = {
         'kullanici_istatistikleri': kullanici_istatistikleri,
@@ -146,6 +147,7 @@ def index(request: Any) -> Any:
         'toplam_satis_genel': toplam_satis_genel,
         'toplam_fatura_genel': toplam_fatura_genel,
         'ortalama_satis_genel': ortalama_satis_genel,
+        'aktif_kullanici_sayisi': aktif_kullanici_sayisi,
     }
     return render(request, 'kullanici_yonetimi/index.html', context)
 

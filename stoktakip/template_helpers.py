@@ -11,7 +11,8 @@ from urllib.parse import urlencode
 
 def generate_pagination_html(
     page_obj: Page, 
-    request_params: Optional[Dict[str, Any]] = None
+    request_params: Optional[Dict[str, Any]] = None,
+    base_path: str = ''
 ) -> SafeString:
     """
     Generate pagination HTML from a page object.
@@ -20,6 +21,7 @@ def generate_pagination_html(
     Args:
         page_obj: Django Page object from Paginator
         request_params: Dictionary of query parameters to preserve in pagination links
+        base_path: Base path for the URL (e.g., '/stok/' or request.path)
     
     Returns:
         Safe HTML string for pagination navigation
@@ -28,33 +30,41 @@ def generate_pagination_html(
         return ''
     
     request_params = request_params or {}
-    base_url = '?'
-    
-    # Build query string
-    query_parts = []
-    for key, value in request_params.items():
-        if value and key != 'page':
-            query_parts.append(f"{key}={value}")
-    query_string = '&'.join(query_parts)
-    if query_string:
-        base_url += query_string + '&'
-    else:
-        base_url += ''
+    # Remove 'page' from params if exists
+    clean_params = {k: v for k, v in request_params.items() if v and k != 'page'}
     
     html_parts = ['<nav aria-label="Sayfa navigasyonu"><ul class="pagination">']
     
     # First and Previous
     if page_obj.has_previous():
-        html_parts.append(f'<li class="page-item"><a class="page-link" href="{base_url}page=1">İlk</a></li>')
-        html_parts.append(f'<li class="page-item"><a class="page-link" href="{base_url}page={page_obj.previous_page_number}">Önceki</a></li>')
+        # First page
+        first_params = clean_params.copy()
+        first_params['page'] = 1
+        first_url = f"{base_path}?{urlencode(first_params)}" if first_params else f"{base_path}?page=1"
+        html_parts.append(f'<li class="page-item"><a class="page-link" href="{first_url}">İlk</a></li>')
+        
+        # Previous page
+        prev_params = clean_params.copy()
+        prev_params['page'] = page_obj.previous_page_number
+        prev_url = f"{base_path}?{urlencode(prev_params)}" if prev_params else f"{base_path}?page={page_obj.previous_page_number}"
+        html_parts.append(f'<li class="page-item"><a class="page-link" href="{prev_url}">Önceki</a></li>')
     
     # Current page
     html_parts.append(f'<li class="page-item active"><span class="page-link">Sayfa {page_obj.number} / {page_obj.paginator.num_pages}</span></li>')
     
     # Next and Last
     if page_obj.has_next():
-        html_parts.append(f'<li class="page-item"><a class="page-link" href="{base_url}page={page_obj.next_page_number}">Sonraki</a></li>')
-        html_parts.append(f'<li class="page-item"><a class="page-link" href="{base_url}page={page_obj.paginator.num_pages}">Son</a></li>')
+        # Next page
+        next_params = clean_params.copy()
+        next_params['page'] = page_obj.next_page_number
+        next_url = f"{base_path}?{urlencode(next_params)}" if next_params else f"{base_path}?page={page_obj.next_page_number}"
+        html_parts.append(f'<li class="page-item"><a class="page-link" href="{next_url}">Sonraki</a></li>')
+        
+        # Last page
+        last_params = clean_params.copy()
+        last_params['page'] = page_obj.paginator.num_pages
+        last_url = f"{base_path}?{urlencode(last_params)}" if last_params else f"{base_path}?page={page_obj.paginator.num_pages}"
+        html_parts.append(f'<li class="page-item"><a class="page-link" href="{last_url}">Son</a></li>')
     
     html_parts.append('</ul></nav>')
     return mark_safe(''.join(html_parts))
@@ -307,8 +317,13 @@ def prepare_urun_table_data(urunler: Any) -> List[Dict[str, Any]]:
     """
     table_data = []
     for urun in urunler:
-        # Stok badge
-        stok_class = 'bg-danger' if urun.mevcut_stok == 0 else 'bg-success'
+        # Stok badge - Renk kodlaması: Negatif = Kırmızı, Pozitif = Yeşil, Sıfır = Beyaz
+        if urun.mevcut_stok < 0:
+            stok_class = 'bg-danger'
+        elif urun.mevcut_stok > 0:
+            stok_class = 'bg-success'
+        else:
+            stok_class = 'bg-secondary'  # Sıfır için beyaz/gri
         stok_badge = f'<span class="badge {stok_class}">{urun.mevcut_stok} {urun.birim}</span>'
         
         # Action buttons

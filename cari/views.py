@@ -65,7 +65,7 @@ def index(request: Any) -> Any:
     
     # Generate pagination HTML
     request_params = {'search': search_query, 'kategori': kategori_filter}
-    pagination_html = generate_pagination_html(cariler, request_params) if cariler.has_other_pages() else None
+    pagination_html = generate_pagination_html(cariler, request_params, request.path) if cariler.has_other_pages() else None
 
     context = {
         'cariler': cariler,
@@ -229,10 +229,14 @@ def cari_detay(request: Any, pk: int) -> Any:
         hareketler = cari.hareketler.select_related('olusturan').all()[:50]
         notlar = cari.notlar.select_related('olusturan').all()[:10]
 
+        # Bakiye mutlak değeri
+        bakiye_abs = abs(cari.bakiye) if cari.bakiye else 0
+        
         context = {
             'cari': cari,
             'hareketler': hareketler,
             'notlar': notlar,
+            'bakiye_abs': bakiye_abs,
         }
         return render(request, 'cari/cari_detay.html', context)
     except Exception as e:
@@ -461,9 +465,21 @@ def hareket_listesi(request: Any) -> Any:
         if belge_nolari:
             faturalar = Fatura.objects.filter(fatura_no__in=belge_nolari).values_list('fatura_no', 'pk')
             fatura_nolari = dict(faturalar)
+        
+        # Her hareket için fatura_id'yi hazırla (template'de kolay erişim için)
+        hareketler_with_fatura = []
+        for hareket in hareketler:
+            fatura_id = None
+            if hareket.belge_no and hareket.hareket_turu in ['satis_faturasi', 'alis_faturasi']:
+                fatura_id = fatura_nolari.get(hareket.belge_no)
+            hareketler_with_fatura.append({
+                'hareket': hareket,
+                'fatura_id': fatura_id
+            })
 
         context = {
             'hareketler': hareketler,
+            'hareketler_with_fatura': hareketler_with_fatura,
             'cariler': Cari.objects.filter(durum='aktif').order_by('ad_soyad'),
             'cari_filter': cari_filter,
             'hareket_turu_filter': hareket_turu_filter,
@@ -563,205 +579,7 @@ def cari_ekstre(request: Any, pk: int) -> Any:
         raise
 
 
-@handle_view_errors(
-    error_message="PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.",
-    redirect_url="cari:index"
-)
-@login_required
-def cari_ekstre_pdf(request: Any, pk: int) -> HttpResponse:
-    """
-    Cari ekstre PDF'i oluşturur ve döndürür.
-    
-    Exception handling ve input validation ile güvenli hale getirilmiştir.
-    PDF oluşturma hataları yakalanır ve kullanıcıya bilgi verilir.
-    
-    Args:
-        request: HTTP request
-        pk: Cari ID'si
-    
-    Returns:
-        PDF HttpResponse
-    """
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
-    from accounts.utils import log_action
-    from io import BytesIO
-    from django.core.exceptions import ValidationError
-    
-    try:
-        cari = get_object_or_404(Cari, pk=pk)
-        
-        # Tarih aralığı validation
-        tarih_baslangic = request.GET.get('tarih_baslangic', '')
-        tarih_bitis = request.GET.get('tarih_bitis', '')
-        
-        if not tarih_baslangic:
-            tarih_baslangic = (timezone.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-        if not tarih_bitis:
-            tarih_bitis = timezone.now().strftime('%Y-%m-%d')
-        
-        # Tarih aralığını validate et
-        try:
-            tarih_baslangic, tarih_bitis = validate_date_range(tarih_baslangic, tarih_bitis)
-        except ValidationError as e:
-            messages.error(request, str(e))
-            return redirect('cari:ekstre', pk=pk)
-        
-        hareketler = cari.hareketler.filter(
-            tarih__gte=tarih_baslangic,
-            tarih__lte=tarih_bitis
-        ).order_by('tarih', 'id')
-        
-        acilis_bakiye = Decimal('0.00')
-        onceki_hareketler = cari.hareketler.filter(tarih__lt=tarih_baslangic)
-        if onceki_hareketler.exists():
-            onceki_borc = onceki_hareketler.filter(
-                hareket_turu__in=['satis_faturasi', 'odeme']
-            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
-            onceki_alacak = onceki_hareketler.filter(
-                hareket_turu__in=['alis_faturasi', 'tahsilat']
-            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
-            acilis_bakiye = onceki_borc - onceki_alacak
-        
-        bakiye = acilis_bakiye
-        ekstre_satirlari = []
-        
-        for hareket in hareketler:
-            if hareket.hareket_turu in ['satis_faturasi', 'odeme']:
-                bakiye += hareket.tutar
-                borc = hareket.tutar
-                alacak = Decimal('0.00')
-            else:
-                bakiye -= hareket.tutar
-                borc = Decimal('0.00')
-                alacak = hareket.tutar
-            
-            ekstre_satirlari.append({
-                'tarih': hareket.tarih,
-                'aciklama': hareket.aciklama or hareket.get_hareket_turu_display(),
-                'belge': hareket.belge_no or '',
-                'borc': borc,
-                'alacak': alacak,
-                'bakiye': bakiye,
-            })
-        
-        kapanis_bakiye = bakiye
-        
-        # Buffer kullan
-        buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4,
-                               rightMargin=30, leftMargin=30,
-                               topMargin=30, bottomMargin=30)
-        elements = []
-        styles = getSampleStyleSheet()
-        
-        # Başlık stili
-        title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Heading1'],
-        fontSize=20,
-        textColor=colors.HexColor('#1a1a1a'),
-        spaceAfter=25,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
-        )
-        
-        elements.append(Paragraph('CARİ EKSTRE RAPORU', title_style))
-        elements.append(Spacer(1, 0.2*inch))
-        
-        # Bilgi tablosu
-        info_data = [
-        ['<b>Cari:</b>', cari.ad_soyad],
-        ['<b>Tarih Aralığı:</b>', f'{tarih_baslangic} - {tarih_bitis}'],
-        ['<b>Açılış Bakiyesi:</b>', f'{acilis_bakiye:,.2f} ₺'],
-        ['<b>Kapanış Bakiyesi:</b>', f'<b>{kapanis_bakiye:,.2f} ₺</b>'],
-        ]
-        
-        info_table = Table(info_data, colWidths=[2.2*inch, 3.3*inch])
-        info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
-        ]))
-        elements.append(info_table)
-        elements.append(Spacer(1, 0.3*inch))
-        
-        # Ekstre tablosu
-        headers = ['Tarih', 'Açıklama', 'Belge No', 'Borç', 'Alacak', 'Bakiye']
-        table_data = [headers]
-        
-        for satir in ekstre_satirlari:
-            table_data.append([
-                satir['tarih'].strftime('%d.%m.%Y'),
-                satir['aciklama'][:50] if len(satir['aciklama']) > 50 else satir['aciklama'],  # Uzun açıklamaları kısalt
-                satir['belge'][:20] if len(satir['belge']) > 20 else satir['belge'],
-                f'{satir["borc"]:,.2f} ₺' if satir["borc"] > 0 else '-',
-                f'{satir["alacak"]:,.2f} ₺' if satir["alacak"] > 0 else '-',
-                f'{satir["bakiye"]:,.2f} ₺'
-            ])
-        
-        ekstre_table = Table(table_data, colWidths=[1.0*inch, 2.3*inch, 1.0*inch, 1.0*inch, 1.0*inch, 1.0*inch])
-        ekstre_table.setStyle(TableStyle([
-        # Başlık satırı
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, 0), TA_CENTER),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('TOPPADDING', (0, 0), (-1, 0), 12),
-        
-        # Veri satırları
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('ALIGN', (0, 1), (0, -1), TA_CENTER),  # Tarih
-        ('ALIGN', (1, 1), (1, -1), TA_LEFT),    # Açıklama
-        ('ALIGN', (2, 1), (2, -1), TA_CENTER), # Belge No
-        ('ALIGN', (3, 1), (3, -1), TA_RIGHT),   # Borç
-        ('ALIGN', (4, 1), (4, -1), TA_RIGHT),   # Alacak
-        ('ALIGN', (5, 1), (5, -1), TA_RIGHT),   # Bakiye
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ]))
-        elements.append(ekstre_table)
-        
-        # PDF oluştur
-        doc.build(elements)
-        
-        # Response hazırla
-        pdf = buffer.getvalue()
-        buffer.close()
-        
-        response = HttpResponse(content_type='application/pdf; charset=utf-8')
-        filename = f"Cari_Ekstre_{cari.ad_soyad}_{tarih_baslangic}_{tarih_bitis}.pdf"
-        # Dosya adındaki özel karakterleri temizle
-        filename = filename.replace(' ', '_').replace('/', '_')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        response.write(pdf)
-        
-        log_action(request.user, 'export', cari, f'Cari ekstre PDF export: {cari.ad_soyad}')
-        return response
-    except Exception as e:
-        logger.error(f"Cari ekstre PDF hatası: {str(e)}", exc_info=True)
-        raise
+# PDF export kaldırıldı
 
 
 @handle_view_errors(
@@ -1140,64 +958,4 @@ def tediye_makbuzu_listesi(request: Any) -> Any:
         raise
 
 
-@handle_view_errors(error_message="Cari yaşlandırma yüklenirken bir hata oluştu.")
-@login_required
-def cari_yaslandirma(request: Any, pk: int) -> Any:
-    """
-    Cari yaşlandırma raporu.
-    
-    Muhasebe yetkisi gerektirir. Cari bakiyelerini yaş gruplarına göre gösterir.
-    Error handling ile güvenli hale getirilmiştir.
-    """
-    try:
-        cari = get_object_or_404(Cari, pk=pk)
-        
-        bugun = timezone.now().date()
-        yaslandirma = {
-            '0-30': {'borc': Decimal('0.00'), 'alacak': Decimal('0.00')},
-            '31-60': {'borc': Decimal('0.00'), 'alacak': Decimal('0.00')},
-            '61-90': {'borc': Decimal('0.00'), 'alacak': Decimal('0.00')},
-            '90+': {'borc': Decimal('0.00'), 'alacak': Decimal('0.00')},
-        }
-        
-        hareketler = cari.hareketler.all().order_by('tarih')
-        bakiye = Decimal('0.00')
-        
-        for hareket in hareketler:
-            gun_farki = (bugun - hareket.tarih.date()).days
-            
-            if hareket.hareket_turu in ['satis_faturasi', 'odeme']:
-                bakiye += hareket.tutar
-                if gun_farki <= 30:
-                    yaslandirma['0-30']['borc'] += hareket.tutar
-                elif gun_farki <= 60:
-                    yaslandirma['31-60']['borc'] += hareket.tutar
-                elif gun_farki <= 90:
-                    yaslandirma['61-90']['borc'] += hareket.tutar
-                else:
-                    yaslandirma['90+']['borc'] += hareket.tutar
-            else:
-                bakiye -= hareket.tutar
-                if gun_farki <= 30:
-                    yaslandirma['0-30']['alacak'] += hareket.tutar
-                elif gun_farki <= 60:
-                    yaslandirma['31-60']['alacak'] += hareket.tutar
-                elif gun_farki <= 90:
-                    yaslandirma['61-90']['alacak'] += hareket.tutar
-                else:
-                    yaslandirma['90+']['alacak'] += hareket.tutar
-        
-        toplam_borc = sum(d['borc'] for d in yaslandirma.values())
-        toplam_alacak = sum(d['alacak'] for d in yaslandirma.values())
-        
-        context = {
-            'cari': cari,
-            'yaslandirma': yaslandirma,
-            'toplam_borc': toplam_borc,
-            'toplam_alacak': toplam_alacak,
-            'net_bakiye': bakiye,
-        }
-        return render(request, 'cari/cari_yaslandirma.html', context)
-    except Exception as e:
-        logger.error(f"Cari yaşlandırma hatası: {str(e)}", exc_info=True)
-        raise
+# Yaşlandırma raporu kaldırıldı

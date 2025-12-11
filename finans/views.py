@@ -90,8 +90,42 @@ def index(request: Any) -> Any:
         paginator = Paginator(hareketler, 20)
         hareketler_page = paginator.get_page(page_number)
         
+        # Her hesap için bakiye hesapla (hareketlere göre)
+        hesaplar_with_bakiye = []
+        for hesap in hesaplar:
+            # Bu hesaba ait tüm hareketleri hesapla
+            hesap_hareketleri = FinansHareketi.objects.filter(hesap=hesap)
+            
+            # Gelir hareketleri (sadece gelir tipi)
+            gelir_toplam = hesap_hareketleri.filter(
+                hareket_tipi='gelir'
+            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
+            
+            # Gider hareketleri
+            gider_toplam = hesap_hareketleri.filter(
+                hareket_tipi='gider'
+            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
+            
+            # Bu hesaba transfer olarak gelen hareketler (hedef_hesap olarak)
+            transfer_giris = FinansHareketi.objects.filter(
+                hedef_hesap=hesap,
+                hareket_tipi='transfer'
+            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
+            
+            # Bu hesaptan transfer olarak çıkan hareketler (hesap olarak transfer tipi)
+            transfer_cikis = hesap_hareketleri.filter(
+                hareket_tipi='transfer'
+            ).aggregate(toplam=Sum('tutar'))['toplam'] or Decimal('0.00')
+            
+            # Bakiye = Gelir + Transfer Giriş - Gider - Transfer Çıkış
+            hesap_bakiye = gelir_toplam + transfer_giris - gider_toplam - transfer_cikis
+            
+            # Hesap objesine bakiye ekle (property olarak)
+            hesap.hesaplanan_bakiye = hesap_bakiye
+            hesaplar_with_bakiye.append(hesap)
+        
         context = {
-            'hesaplar': hesaplar,
+            'hesaplar': hesaplar_with_bakiye,
             'hareketler': hareketler_page,
             'toplam_gelir': toplam_gelir,
             'toplam_gider': toplam_gider,

@@ -7,9 +7,6 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5>{{ cari.ad_soyad }} - Hesap Ekstresi</h5>
         <div>
-            <a href="{% url 'cari:ekstre_pdf' cari.pk %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}" class="btn btn-sm btn-info" target="_blank">
-                <i class="bi bi-file-pdf"></i> PDF İndir
-            </a>
             <a href="{% url 'cari:detay' cari.pk %}" class="btn btn-sm btn-secondary">
                 <i class="bi bi-arrow-left"></i> Geri
             </a>

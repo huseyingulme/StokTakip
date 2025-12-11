@@ -52,8 +52,12 @@
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-primary text-white">
                 <h6 class="mb-0">
-                    <i class="bi bi-person-circle"></i> {{
-                    istatistik.kullanici.get_full_name|default:istatistik.kullanici.username }}
+                    <i class="bi bi-person-circle"></i> 
+                    {% if istatistik.kullanici.get_full_name %}
+                        {{ istatistik.kullanici.get_full_name }}
+                    {% else %}
+                        {{ istatistik.kullanici.username }}
+                    {% endif %}
                 </h6>
             </div>
             <div class="card-body">
@@ -113,7 +117,7 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-3">
-                        <h4 class="text-primary">{{ kullanici_istatistikleri|length }}</h4>
+                        <h4 class="text-primary">{{ aktif_kullanici_sayisi }}</h4>
                         <small class="text-muted">Aktif Kullanıcı</small>
                     </div>
                     <div class="col-md-3">

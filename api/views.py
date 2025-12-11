@@ -12,9 +12,6 @@ from .serializers import (
 from accounts.utils import log_action
 from stoktakip.error_handling import handle_api_errors
 from stoktakip.security_utils import sanitize_string, sanitize_integer, validate_search_query
-from .permissions import (
-    IsAdminOrDepo, IsAdminOrMuhasebe, IsAdminOrSatis, IsAdminOnly
-)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +20,7 @@ logger = logging.getLogger(__name__)
 class KategoriViewSet(viewsets.ModelViewSet):
     queryset = Kategori.objects.all()
     serializer_class = KategoriSerializer
-    permission_classes = [IsAdminOrDepo]
+    permission_classes = [permissions.IsAuthenticated]
     
     @handle_api_errors
     def list(self, request, *args, **kwargs):
@@ -54,7 +51,7 @@ class KategoriViewSet(viewsets.ModelViewSet):
 class UrunViewSet(viewsets.ModelViewSet):
     queryset = Urun.objects.select_related('kategori').all()
     serializer_class = UrunSerializer
-    permission_classes = [IsAdminOrDepo]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
         queryset = Urun.objects.select_related('kategori').all()
@@ -116,7 +113,7 @@ class UrunViewSet(viewsets.ModelViewSet):
 class StokHareketiViewSet(viewsets.ModelViewSet):
     queryset = StokHareketi.objects.select_related('urun', 'olusturan').all()
     serializer_class = StokHareketiSerializer
-    permission_classes = [IsAdminOrDepo]
+    permission_classes = [permissions.IsAuthenticated]
     
     @handle_api_errors
     def list(self, request, *args, **kwargs):
@@ -151,7 +148,7 @@ class StokHareketiViewSet(viewsets.ModelViewSet):
 class CariViewSet(viewsets.ModelViewSet):
     queryset = Cari.objects.filter(durum='aktif')
     serializer_class = CariSerializer
-    permission_classes = [IsAdminOrSatis]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
         queryset = Cari.objects.filter(durum='aktif')
@@ -213,7 +210,7 @@ class CariViewSet(viewsets.ModelViewSet):
 class CariHareketiViewSet(viewsets.ModelViewSet):
     queryset = CariHareketi.objects.select_related('cari', 'olusturan').all()
     serializer_class = CariHareketiSerializer
-    permission_classes = [IsAdminOrMuhasebe]
+    permission_classes = [permissions.IsAuthenticated]
     
     @handle_api_errors
     def list(self, request, *args, **kwargs):
@@ -248,15 +245,7 @@ class CariHareketiViewSet(viewsets.ModelViewSet):
 class FaturaViewSet(viewsets.ModelViewSet):
     queryset = Fatura.objects.select_related('cari', 'olusturan').prefetch_related('kalemler').all()
     serializer_class = FaturaSerializer
-    permission_classes = [IsAdminOrSatis]
-    
-    def get_permissions(self):
-        """
-        DELETE işlemi için sadece muhasebe/admin izni gerekli
-        """
-        if self.action == 'destroy':
-            return [IsAdminOrMuhasebe()]
-        return [IsAdminOrSatis()]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
         queryset = Fatura.objects.select_related('cari', 'olusturan').prefetch_related('kalemler').all()
