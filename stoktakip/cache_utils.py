@@ -5,9 +5,6 @@ View-level caching, query result caching için decorator'lar ve helper'lar.
 from functools import wraps
 from typing import Callable, Any, Optional
 from django.core.cache import cache
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers
 
 
 def cache_view_result(timeout: int = 300, key_prefix: Optional[str] = None):
@@ -59,85 +56,4 @@ def cache_view_result(timeout: int = 300, key_prefix: Optional[str] = None):
     return decorator
 
 
-def cache_query_result(timeout: int = 300):
-    """
-    Query sonuçlarını cache'ler.
-    Fonksiyonun return değerini cache'ler.
-    
-    Args:
-        timeout: Cache süresi (saniye cinsinden)
-    
-    Usage:
-        @cache_query_result(timeout=600)
-        def get_dashboard_stats():
-            return {...}
-    """
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            # Cache key oluştur (fonksiyon adı + argümanlar)
-            cache_key = f"{func.__name__}_{str(args)}_{str(sorted(kwargs.items()))}"
-            
-            # Cache'den oku
-            cached_result = cache.get(cache_key)
-            if cached_result is not None:
-                return cached_result
-            
-            # Fonksiyonu çalıştır
-            result = func(*args, **kwargs)
-            
-            # Cache'e yaz
-            cache.set(cache_key, result, timeout)
-            
-            return result
-        
-        return wrapper
-    return decorator
-
-
-def invalidate_cache(pattern: str):
-    """
-    Belirli bir pattern'e uyan cache key'lerini siler.
-    
-    Args:
-        pattern: Cache key pattern (örn: 'dashboard_*')
-    
-    Usage:
-        invalidate_cache('dashboard_*')
-    """
-    # Django cache backend'ine göre değişir
-    # Redis kullanılıyorsa pattern matching yapılabilir
-    # LocMemCache için tüm cache'i temizlemek gerekebilir
-    try:
-        # Redis için pattern matching
-        from django_redis import get_redis_connection
-        redis_conn = get_redis_connection("default")
-        keys = redis_conn.keys(f"stoktakip:{pattern}")
-        if keys:
-            redis_conn.delete(*keys)
-    except Exception:
-        # Redis yoksa veya hata varsa, cache'i temizle
-        cache.clear()
-
-
-def get_or_set_cache(key: str, callable_func: Callable, timeout: int = 300) -> Any:
-    """
-    Cache'den oku, yoksa fonksiyonu çalıştır ve cache'e yaz.
-    
-    Args:
-        key: Cache key
-        callable_func: Cache'de yoksa çalıştırılacak fonksiyon
-        timeout: Cache süresi
-    
-    Returns:
-        Cache'den veya fonksiyondan dönen değer
-    
-    Usage:
-        stats = get_or_set_cache('dashboard_stats', lambda: calculate_stats(), timeout=600)
-    """
-    result = cache.get(key)
-    if result is None:
-        result = callable_func()
-        cache.set(key, result, timeout)
-    return result
 

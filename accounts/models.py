@@ -25,7 +25,6 @@ class AuditLog(models.Model):
         ('update', 'Güncelleme'),
         ('delete', 'Silme'),
         ('view', 'Görüntüleme'),
-        ('export', 'Dışa Aktarma'),
         ('login', 'Giriş'),
         ('logout', 'Çıkış'),
     ]

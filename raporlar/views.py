@@ -14,7 +14,7 @@ from cari.models import Cari, CariHareketi
 from fatura.models import Fatura, FaturaKalem
 from accounts.utils import log_action
 from stoktakip.error_handling import handle_view_errors
-from stoktakip.cache_utils import cache_view_result, get_or_set_cache
+from stoktakip.cache_utils import cache_view_result
 from stoktakip.security_utils import validate_date_range, sanitize_integer
 
 logger = logging.getLogger(__name__)

@@ -3,9 +3,7 @@ Güvenlik ve input validation utility fonksiyonları.
 CSRF koruması, input sanitization ve XSS koruması için helper'lar.
 """
 import re
-from typing import Any, Optional, Union
-from django.utils.html import escape
-from django.utils.safestring import mark_safe
+from typing import Any, Optional
 from django.core.exceptions import ValidationError
 
 
@@ -97,52 +95,6 @@ def sanitize_decimal(value: Any, min_value: Optional[float] = None,
         raise ValidationError(f"Value must be at most {max_value}")
     
     return float_value
-
-
-def sanitize_sql_input(value: str) -> str:
-    """
-    SQL injection'a karşı input'u sanitize eder.
-    Django ORM kullanıldığı için risk düşük ama ekstra güvenlik için.
-    
-    Args:
-        value: Temizlenecek string
-    
-    Returns:
-        SQL injection'a karşı temizlenmiş string
-    """
-    if not isinstance(value, str):
-        return str(value)
-    
-    # Tehlikeli SQL karakterlerini escape et
-    dangerous_chars = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_']
-    cleaned = value
-    
-    for char in dangerous_chars:
-        cleaned = cleaned.replace(char, '')
-    
-    return cleaned
-
-
-def safe_html_render(html_content: str) -> str:
-    """
-    HTML içeriğini güvenli bir şekilde render eder (XSS koruması).
-    
-    Args:
-        html_content: Render edilecek HTML içeriği
-    
-    Returns:
-        Güvenli HTML string (mark_safe ile)
-    """
-    # Temel XSS koruması - script tag'lerini kaldır
-    html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.IGNORECASE | re.DOTALL)
-    
-    # Event handler'ları kaldır (onclick, onerror, vb.)
-    html_content = re.sub(r'\s*on\w+\s*=\s*["\'][^"\']*["\']', '', html_content, flags=re.IGNORECASE)
-    
-    # JavaScript: protocol'ünü kaldır
-    html_content = re.sub(r'javascript:', '', html_content, flags=re.IGNORECASE)
-    
-    return mark_safe(html_content)
 
 
 def validate_date_range(start_date: str, end_date: str) -> tuple[str, str]:

@@ -195,25 +195,3 @@ def database_transaction(view_func: Callable) -> Callable:
     return wrapper
 
 
-def safe_render(view_func: Callable) -> Callable:
-    """
-    Template rendering için güvenli decorator.
-    Template hatalarını yakalar ve loglar.
-    
-    Usage:
-        @safe_render
-        def my_view(request):
-            return render(request, 'template.html', context)
-    """
-    @wraps(view_func)
-    def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return view_func(request, *args, **kwargs)
-        except Exception as e:
-            logger.error(f"Template rendering error in {view_func.__name__}: {str(e)}", 
-                        exc_info=True)
-            messages.error(request, "Sayfa yüklenirken bir hata oluştu.")
-            return redirect('raporlar:dashboard')
-    
-    return wrapper
-
