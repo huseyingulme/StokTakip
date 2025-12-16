@@ -24,15 +24,15 @@ body {
     position: fixed;
     height: 100vh;
     overflow-y: auto;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
     z-index: 1000;
 }
 
 .sidebar-header {
     padding: 25px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     text-align: center;
-    background: rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header h4 {
@@ -62,7 +62,7 @@ body {
     display: flex;
     align-items: center;
     padding: 14px 20px;
-    color: rgba(255,255,255,0.85);
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     transition: all 0.3s ease;
     border-left: 4px solid transparent;
@@ -72,7 +72,7 @@ body {
 }
 
 .menu-item:hover {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.12);
     color: white;
     border-left-color: #4facfe;
     transform: translateX(5px);
@@ -93,7 +93,7 @@ body {
 
 .sidebar-footer {
     padding: 15px 20px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-info {
@@ -101,9 +101,9 @@ body {
     align-items: center;
     margin-bottom: 15px;
     font-size: 0.9rem;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     padding: 8px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
 }
 
@@ -167,7 +167,7 @@ body {
     background: white;
     padding: 20px 30px;
     border-bottom: 1px solid #e9ecef;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -194,14 +194,14 @@ body {
 .card {
     border: none;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 25px;
     transition: all 0.3s ease;
     overflow: hidden;
 }
 
 .card:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
 }
 
@@ -223,7 +223,7 @@ body {
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
@@ -258,12 +258,14 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.form-control, .form-select {
+.form-control,
+.form-select {
     border-radius: 5px;
     border: 1px solid #ced4da;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
     border-color: #3498db;
     box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
 }
@@ -282,11 +284,11 @@ body {
         transform: translateX(-100%);
         transition: transform 0.3s;
     }
-    
+
     .sidebar.active {
         transform: translateX(0);
     }
-    
+
     .main-content {
         margin-left: 0;
     }

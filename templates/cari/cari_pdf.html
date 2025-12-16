@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cari Ekstre - {{ cari.ad_soyad }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 11px;
+        }
+
+        h2 {
+            margin-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #555;
+            padding: 4px 6px;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .no-border td {
+            border: none;
+        }
+
+        .summary td {
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Cari Hesap Ekstresi</h2>
+    <table class="no-border">
+        <tr class="no-border">
+            <td class="no-border" style="width: 60%">
+                <strong>{{ cari.ad_soyad }}</strong><br>
+                {% if cari.adres %}{{ cari.adres }}<br>{% endif %}
+                {% if cari.vergi_dairesi %}Vergi Dairesi: {{ cari.vergi_dairesi }}<br>{% endif %}
+                {% if cari.vergi_no %}Vergi No: {{ cari.vergi_no }}<br>{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>Açıklama</th>
+                <th>Belge</th>
+                <th style="width: 15%; text-align: right;">Borç</th>
+                <th style="width: 15%; text-align: right;">Alacak</th>
+                <th style="width: 15%; text-align: right;">Bakiye</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for satir in ekstre_satirlari %}
+            <tr>
+                <td>{{ satir.tarih|date:"d.m.Y" }}</td>
+                <td>{{ satir.aciklama }}</td>
+                <td>{{ satir.belge }}</td>
+                <td style="text-align: right;">{{ satir.borc }}</td>
+                <td style="text-align: right;">{{ satir.alacak }}</td>
+                <td style="text-align: right;">{{ satir.bakiye }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="summary" style="margin-top: 10px;">
+        <tr>
+            <td>Toplam Borç:</td>
+            <td style="text-align: right; width: 120px;">{{ toplam_borc }}</td>
+        </tr>
+        <tr>
+            <td>Toplam Alacak:</td>
+            <td style="text-align: right;">{{ toplam_alacak }}</td>
+        </tr>
+        <tr>
+            <td><strong>Genel Bakiye:</strong></td>
+            <td style="text-align: right;"><strong>{{ bakiye }}</strong></td>
+        </tr>
+    </table>
+</body>
+
+</html>

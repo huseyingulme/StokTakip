@@ -200,16 +200,17 @@ try:
 except ImportError:
     pass
 
-# Email settings (Password reset için)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development için console
-# Production için aşağıdaki ayarları kullanın:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-# EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-# DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@stoktakip.com')
+# Email settings (Gmail SMTP - production ready)
+# App Password kullanımı için .env içinde aşağıdaki değişkenleri ayarlayın:
+# EMAIL_HOST_USER=you@gmail.com
+# EMAIL_HOST_PASSWORD=your_app_password
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'huseyin.glm.22@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'faaf yinx wujf acrx')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"Stok Takip <{EMAIL_HOST_USER}>")
 
 # Error pages (urls.py'de tanımlı)
 

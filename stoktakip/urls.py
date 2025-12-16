@@ -4,11 +4,12 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from accounts.views import CustomLoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('accounts/login/', CustomLoginView.as_view(), name='login'),
     path('accounts/logout/', views.custom_logout, name='logout'),
     path('stok/', include('stok.urls')),
     path('cari/', include('cari.urls')),

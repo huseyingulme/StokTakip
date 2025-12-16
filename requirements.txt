@@ -8,3 +8,6 @@ django-ratelimit>=4.1.0
 django-extensions>=3.2.3
 redis>=5.0.1
 
+# PDF generation via HTML
+xhtml2pdf>=0.2.15
+

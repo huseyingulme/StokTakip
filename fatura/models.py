@@ -1,12 +1,8 @@
 from django.db import models
-from django.utils import timezone
 from django.db.models import Sum
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from datetime import datetime, time
 from decimal import Decimal
-from cari.models import Cari, CariHareketi
-from stok.models import Urun, StokHareketi
 
 
 class Fatura(models.Model):
@@ -79,74 +75,25 @@ class Fatura(models.Model):
         return f"{prefix}-{tarih_str}-{yeni_no:03d}"
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        olusturan_user = kwargs.pop('olusturan_user', None)
+        """
+        Fatura kaydetme metodu.
         
+        NOT: İş mantığı (stok hareketleri, cari hareketleri) servis katmanında yönetilir.
+        Burada sadece temel kaydetme işlemi yapılır.
+        """
+        is_new = self.pk is None
+        
+        # Yeni fatura için otomatik fatura numarası oluştur
         if is_new and not self.fatura_no:
             self.fatura_no = self.olustur_fatura_no()
         
         super().save(*args, **kwargs)
-        # Önce toplamları hesapla
-        self.hesapla_toplamlar()
-        # genel_toplam'ı güncellemek için refresh yap
-        self.refresh_from_db()
         
-        # Cari hareket mantığı: Sadece "Açık Hesap" durumunda cariye işle
-        # NOT: Yeni faturalar için kalemler henüz eklenmemiş olabilir, 
-        # bu yüzden cari hareketi view'larda (kalemler eklendikten sonra) oluşturulacak
-        # Burada sadece mevcut faturaların güncellenmesi durumunda cari hareketi güncellenir
-        if not is_new and self.cari and self.genel_toplam > 0:
-            # Alış faturası: alis_faturasi (ALACAK - biz cariye borçluyuz)
-            # Satış faturası: satis_faturasi (BORÇ - cari bize borçlu)
-            hareket_turu = 'satis_faturasi' if self.fatura_tipi == 'Satis' else 'alis_faturasi'
-            
-            # Mevcut fatura güncelleniyor
-            cari_hareket = CariHareketi.objects.filter(belge_no=self.fatura_no).first()
-            
-            if self.durum == 'AcikHesap':
-                # Açık hesap - cari hareketi oluştur veya güncelle
-                if cari_hareket:
-                    cari_hareket.tutar = self.genel_toplam
-                    # Timezone-aware datetime oluştur
-                    tarih_naive = datetime.combine(self.fatura_tarihi, time.min)
-                    cari_hareket.tarih = timezone.make_aware(tarih_naive)
-                    cari_hareket.aciklama = f"Fatura: {self.fatura_no}"
-                    cari_hareket.hareket_turu = hareket_turu  # Hareket türünü de güncelle
-                    cari_hareket.save()
-                else:
-                    # Eğer cari hareketi yoksa oluştur (kalemler zaten eklenmiş olmalı)
-                    # Timezone-aware datetime oluştur
-                    tarih_naive = datetime.combine(self.fatura_tarihi, time.min)
-                    CariHareketi.objects.create(
-                        cari=self.cari,
-                        hareket_turu=hareket_turu,
-                        tutar=self.genel_toplam,
-                        aciklama=f"Fatura: {self.fatura_no}",
-                        belge_no=self.fatura_no,
-                        tarih=timezone.make_aware(tarih_naive),
-                        olusturan=self.olusturan
-                    )
-            elif self.durum == 'KasadanKapanacak':
-                # Kasadan kapanacak - cari hareketi sil (ödendi gibi)
-                if cari_hareket:
-                    cari_hareket.delete()
-            
-            # Stok hareketleri: Kalemler eklendikten sonra view'larda oluşturulacak
-            # Burada sadece güncelleme durumunda stok hareketlerini güncelle
-            if not is_new:
-                # Mevcut stok hareketlerini sil ve yeniden oluştur
-                StokHareketi.objects.filter(aciklama__startswith=f"Fatura: {self.fatura_no}").delete()
-                for kalem in self.kalemler.all():
-                    if kalem.urun:
-                        stok_islem_turu = 'giriş' if self.fatura_tipi == 'Alis' else 'çıkış'
-                        # StokHareketi.tarih auto_now_add=True olduğu için tarih parametresi verilmez
-                        StokHareketi.objects.create(
-                            urun=kalem.urun,
-                            islem_turu=stok_islem_turu,
-                            miktar=kalem.miktar,
-                            aciklama=f"Fatura: {self.fatura_no}",
-                            olusturan=olusturan_user or self.olusturan
-                        )
+        # Toplamları hesapla (kalemler varsa)
+        # NOT: Bu model seviyesinde kalabilir çünkü model'in kendi verisini günceller
+        if self.pk:
+            self.hesapla_toplamlar()
+            self.refresh_from_db()
 
     def hesapla_toplamlar(self):
         from decimal import ROUND_HALF_UP

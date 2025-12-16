@@ -8,18 +8,43 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import LoginView
 from typing import Any
-import secrets
-import string
 import logging
-import re
 from .utils import log_action
 from .models import AuditLog
 from stoktakip.error_handling import handle_view_errors, database_transaction
-from stoktakip.security_utils import sanitize_string, validate_search_query
+from stoktakip.security_utils import validate_search_query
+from .services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
+
+
+class CustomLoginView(LoginView):
+    """Özel login view'i.
+
+    - Template: templates/registration/login.html
+    - "Beni hatırla" (remember_me) checkbox'una göre session süresini ayarlar.
+    """
+
+    template_name = "registration/login.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        remember_me = self.request.POST.get("remember_me")
+        if remember_me:
+            # 2 hafta boyunca oturum açık kalsın
+            self.request.session.set_expiry(60 * 60 * 24 * 14)
+        else:
+            # Tarayıcı kapanınca oturum sonlansın
+            self.request.session.set_expiry(0)
+
+        return response
 
 
 @handle_view_errors(
@@ -28,20 +53,19 @@ logger = logging.getLogger(__name__)
 )
 @database_transaction
 def register(request: Any) -> Any:
-    """
-    Kullanıcı kayıt sayfası.
-    
+    """Kullanıcı kayıt sayfası.
+
     Rate limiting ve transaction yönetimi ile güvenli hale getirilmiştir.
     """
     # Rate limiting - IP bazlı
     ip_address = request.META.get('REMOTE_ADDR', '')
     cache_key = f'register_rate_limit_{ip_address}'
     attempts = cache.get(cache_key, 0)
-    
+
     if attempts >= 5:  # 5 dakikada 5 kayıt denemesi
         messages.error(request, 'Çok fazla kayıt denemesi yaptınız. Lütfen 5 dakika sonra tekrar deneyin.')
         return render(request, 'registration/register.html', {'form': UserCreationForm()})
-    
+
     if request.method == 'POST':
         try:
             form = UserCreationForm(request.POST)
@@ -49,10 +73,10 @@ def register(request: Any) -> Any:
                 with transaction.atomic():
                     user = form.save()
                     login(request, user)
-                    
+
                     # Rate limiting cache'e kaydet
                     cache.set(cache_key, attempts + 1, 300)  # 5 dakika
-                    
+
                     log_action(user, 'create', None, 'Yeni kullanıcı kaydı', request)
                     messages.success(request, 'Kayıt başarılı!')
                     return redirect('raporlar:dashboard')
@@ -64,19 +88,17 @@ def register(request: Any) -> Any:
             raise
     else:
         form = UserCreationForm()
-    
+
     return render(request, 'registration/register.html', {'form': form})
 
 
 @handle_view_errors(
-    error_message="Şifre değiştirme işlemi sırasında bir hata oluştu.",
-    redirect_url="accounts:password_change"
+    error_message="Şifre değiştirme işlemi sırasında bir hata oluştu."
 )
 @login_required
 def password_change(request: Any) -> Any:
-    """
-    Şifre değiştirme sayfası.
-    
+    """Şifre değiştirme sayfası.
+
     Error handling ile güvenli hale getirilmiştir.
     """
     try:
@@ -96,7 +118,7 @@ def password_change(request: Any) -> Any:
                 raise
         else:
             form = PasswordChangeForm(request.user)
-        
+
         return render(request, 'accounts/password_change.html', {'form': form})
     except Exception as e:
         logger.error(f"Şifre değiştirme hatası: {str(e)}", exc_info=True)
@@ -104,100 +126,56 @@ def password_change(request: Any) -> Any:
 
 
 @handle_view_errors(
-    error_message="Şifre sıfırlama işlemi sırasında bir hata oluştu.",
-    redirect_url="accounts:password_reset"
+    error_message="Şifre sıfırlama işlemi sırasında bir hata oluştu."
 )
-@database_transaction
-def password_reset(request: Any) -> Any:
+def forgot_password(request: Any) -> Any:
+    """Token tabanlı şifre sıfırlama e-postası gönderir.
+
+    EmailService ile mail mantığı merkezi tutulur.
     """
-    Şifre sıfırlama - E-posta kontrolü ve rastgele şifre oluşturma.
-    
-    Rate limiting, email validation ve transaction yönetimi ile güvenli hale getirilmiştir.
-    """
-    # Rate limiting - IP bazlı
-    ip_address = request.META.get('REMOTE_ADDR', '')
-    cache_key = f'password_reset_rate_limit_{ip_address}'
-    attempts = cache.get(cache_key, 0)
-    
-    if attempts >= 3:  # 15 dakikada 3 deneme
-        messages.error(request, 'Çok fazla şifre sıfırlama denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.')
-        return render(request, 'registration/password_reset.html')
-    
-    if request.method == 'POST':
-        try:
-            email = sanitize_string(request.POST.get('email', '').strip(), max_length=254)
-            
-            # Email validation
-            if not email:
-                messages.error(request, 'Lütfen e-posta adresinizi girin.')
-                cache.set(cache_key, attempts + 1, 900)  # 15 dakika
-                return render(request, 'registration/password_reset.html')
-            
-            # Email format validation
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_pattern, email):
-                messages.error(request, 'Geçersiz e-posta formatı.')
-                cache.set(cache_key, attempts + 1, 900)
-                return render(request, 'registration/password_reset.html')
-            
-            # Veritabanında e-posta ile kullanıcı ara
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                # Güvenlik için: kullanıcı bulunamasa bile rate limiting artır
-                cache.set(cache_key, attempts + 1, 900)
-                messages.error(request, 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.')
-                logger.warning(f"Şifre sıfırlama denemesi - kullanıcı bulunamadı: {email}")
-                return render(request, 'registration/password_reset.html')
-            
-            # Transaction içinde şifre sıfırla
-            with transaction.atomic():
-                # Rastgele şifre oluştur (12 karakter: büyük harf, küçük harf, rakam, özel karakter)
-                alphabet = string.ascii_letters + string.digits + "!@#$%&*"
-                new_password = ''.join(secrets.choice(alphabet) for i in range(12))
-                
-                # Şifreyi kaydet
-                user.set_password(new_password)
-                user.save()
-                
-                # Rate limiting cache'e kaydet
-                cache.set(cache_key, attempts + 1, 900)  # 15 dakika
-                
-                # Audit log
-                log_action(user, 'update', None, f'Şifre sıfırlandı (e-posta: {email})', request)
-                logger.info(f"Şifre sıfırlandı: {email}")
-                
-                # Başarılı sayfasına yönlendir ve şifreyi göster
-                return render(request, 'registration/password_reset_success.html', {
-                    'new_password': new_password,
-                    'email': email,
-                    'username': user.username
-                })
-                
-        except ValidationError as e:
-            messages.error(request, str(e))
-            cache.set(cache_key, attempts + 1, 900)
-        except Exception as e:
-            logger.error(f"Şifre sıfırlama hatası: {str(e)}", exc_info=True)
-            cache.set(cache_key, attempts + 1, 900)
-            raise
-    
-    return render(request, 'registration/password_reset.html')
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        user = User.objects.filter(email=email).first()
+
+        # Güvenlik: kullanıcı bulunmasa bile aynı cevap
+        if user:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_link = request.build_absolute_uri(
+                reverse("accounts:password_reset_confirm", args=[uid, token])
+            )
+
+            html_content = f"""
+                <h2>Şifre Sıfırlama</h2>
+                <p>Şifrenizi sıfırlamak için aşağıdaki linke tıklayın:</p>
+                <a href="{reset_link}">Şifreyi Sıfırla</a>
+                <br><br>
+                <small>Eğer bu isteği siz yapmadıysanız, bu maili yok sayabilirsiniz.</small>
+            """
+
+            EmailService.send_email(
+                subject="Şifre Sıfırlama Talebi",
+                to_email=email,
+                html_content=html_content,
+            )
+
+        return render(request, "accounts/forgot_password_done.html")
+
+    return render(request, "accounts/forgot_password.html")
 
 
 @handle_view_errors(error_message="Profil sayfası yüklenirken bir hata oluştu.")
 @login_required
 def profile(request: Any) -> Any:
-    """
-    Kullanıcı profil sayfası.
-    
+    """Kullanıcı profil sayfası.
+
     Error handling ile güvenli hale getirilmiştir.
     """
     try:
         from .models import UserProfile
-        
+
         profile, created = UserProfile.objects.get_or_create(user=request.user)
-        
+
         context = {
             'profile': profile,
             'user': request.user,
@@ -211,15 +189,14 @@ def profile(request: Any) -> Any:
 @handle_view_errors(error_message="Audit log listesi yüklenirken bir hata oluştu.")
 @login_required
 def audit_log_list(request: Any) -> Any:
-    """
-    Audit log görüntüleme sayfası.
-    
+    """Audit log görüntüleme sayfası.
+
     Admin yetkisi gerektirir. Filtreleme, arama ve sayfalama desteği ile
     audit log listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
     """
     try:
         log_list = AuditLog.objects.select_related('user', 'content_type').all()
-        
+
         # Arama - Input validation ile
         search_query = request.GET.get('search', '')
         if search_query:
@@ -234,7 +211,7 @@ def audit_log_list(request: Any) -> Any:
                 logger.warning(f"Geçersiz arama sorgusu: {str(e)}")
                 messages.warning(request, "Geçersiz arama sorgusu.")
                 search_query = ''
-        
+
         # Filtreler - Input validation
         action_filter = request.GET.get('action', '')
         if action_filter:
@@ -243,7 +220,7 @@ def audit_log_list(request: Any) -> Any:
                 log_list = log_list.filter(action=action_filter)
             else:
                 action_filter = ''
-        
+
         user_filter = request.GET.get('user', '')
         if user_filter:
             try:
@@ -256,7 +233,7 @@ def audit_log_list(request: Any) -> Any:
                     user_filter = ''
             except Exception:
                 user_filter = ''
-        
+
         # Tarih filtresi - Input validation
         tarih_baslangic = request.GET.get('tarih_baslangic', '')
         tarih_bitis = request.GET.get('tarih_bitis', '')
@@ -277,7 +254,7 @@ def audit_log_list(request: Any) -> Any:
             log_list = log_list.filter(timestamp__date__gte=tarih_baslangic)
         elif tarih_bitis:
             log_list = log_list.filter(timestamp__date__lte=tarih_bitis)
-        
+
         # Sayfalama - Input validation
         try:
             from stoktakip.security_utils import sanitize_integer
@@ -285,12 +262,12 @@ def audit_log_list(request: Any) -> Any:
             page_number = sanitize_integer(page_number, min_value=1)
         except Exception:
             page_number = 1
-        
+
         paginator = Paginator(log_list, 50)
         logs = paginator.get_page(page_number)
-        
+
         from django.contrib.auth.models import User
-        
+
         context = {
             'logs': logs,
             'search_query': search_query,
@@ -305,4 +282,3 @@ def audit_log_list(request: Any) -> Any:
     except Exception as e:
         logger.error(f"Audit log listesi hatası: {str(e)}", exc_info=True)
         raise
-

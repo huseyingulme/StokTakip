@@ -6,11 +6,11 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between">
         <h5>Fatura: {{ fatura.fatura_no }}</h5>
-        <div>
-            <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-sm btn-warning">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{% url 'fatura:duzenle' fatura.pk %}" class="btn btn-warning">
                 <i class="bi bi-pencil"></i> Düzenle
             </a>
-            <a href="{% url 'fatura:sil' fatura.pk %}" class="btn btn-sm btn-danger">
+            <a href="{% url 'fatura:sil' fatura.pk %}" class="btn btn-danger">
                 <i class="bi bi-trash"></i> Sil
             </a>
         </div>

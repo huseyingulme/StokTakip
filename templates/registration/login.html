@@ -46,16 +46,16 @@
                         <label for="id_username" class="form-label">
                             <i class="bi bi-person"></i> Kullanıcı Adı
                         </label>
-                        <input type="text" class="form-control form-control-lg" id="id_username" name="username" 
-                               required autofocus placeholder="Kullanıcı adınızı giriniz">
+                        <input type="text" class="form-control form-control-lg" id="id_username" name="username"
+                            required autofocus placeholder="Kullanıcı adınızı giriniz">
                     </div>
 
                     <div class="form-group">
                         <label for="id_password" class="form-label">
                             <i class="bi bi-lock"></i> Şifre
                         </label>
-                        <input type="password" class="form-control form-control-lg" id="id_password" name="password" 
-                               required placeholder="Şifrenizi giriniz">
+                        <input type="password" class="form-control form-control-lg" id="id_password" name="password"
+                            required placeholder="Şifrenizi giriniz">
                     </div>
 
                     <div class="form-group">
@@ -66,7 +66,7 @@
                                     Beni hatırla
                                 </label>
                             </div>
-                            <a href="{% url 'accounts:password_reset' %}" class="forgot-password-link">
+                            <a href="{% url 'accounts:forgot_password' %}" class="forgot-password-link">
                                 <i class="bi bi-question-circle"></i> Şifremi Unuttum
                             </a>
                         </div>
@@ -76,13 +76,7 @@
                         <i class="bi bi-box-arrow-in-right"></i> Giriş Yap
                     </button>
                 </form>
-
-                <div class="login-footer">
-                    <p class="text-center text-muted mb-0">
-                        Hesabınız yok mu? 
-                        <a href="{% url 'accounts:register' %}" class="register-link">Kayıt Ol</a>
-                    </p>
-                </div>
+                {# Kayıt ol özelliği tamamen kapalı olduğu için alttaki footer kaldırıldı #}
             </div>
         </div>
     </div>
@@ -107,14 +101,19 @@
         position: absolute;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
         background-size: 50px 50px;
         animation: move 20s linear infinite;
     }
 
     @keyframes move {
-        0% { transform: translate(0, 0); }
-        100% { transform: translate(50px, 50px); }
+        0% {
+            transform: translate(0, 0);
+        }
+
+        100% {
+            transform: translate(50px, 50px);
+        }
     }
 
     .login-wrapper {
@@ -127,7 +126,7 @@
     .login-card {
         background: white;
         border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         overflow: hidden;
         animation: slideUp 0.5s ease-out;
     }
@@ -153,7 +152,7 @@
     .logo-container {
         width: 80px;
         height: 80px;
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -263,7 +262,7 @@
         .login-body {
             padding: 30px 20px;
         }
-        
+
         .login-header {
             padding: 30px 20px;
         }

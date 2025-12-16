@@ -8,12 +8,16 @@ from django.db import transaction
 from decimal import Decimal
 from typing import Any
 import logging
+
 from .models import HesapKart, FinansHareketi
 from .forms import HesapKartForm, FinansHareketiForm
 from accounts.utils import log_action
 from stoktakip.error_handling import handle_view_errors, database_transaction
 from stoktakip.security_utils import (
-    sanitize_integer, sanitize_decimal, validate_date_range, validate_search_query
+    sanitize_integer,
+    sanitize_decimal,
+    validate_date_range,
+    validate_search_query,
 )
 from stoktakip.cache_utils import cache_view_result
 
