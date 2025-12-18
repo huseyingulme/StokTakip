@@ -5,16 +5,18 @@
 {% block page_title %}<i class="bi bi-speedometer2"></i> Dashboard{% endblock %}
 
 {% block content %}
+
 <!-- Hoş Geldiniz Mesajı -->
 <div class="welcome-banner mb-4">
     <div class="row align-items-center">
         <div class="col-md-8">
-            <h3 class="mb-1">Hoş Geldiniz, <span class="text-primary">{% if user.first_name and user.last_name %}{{ user.first_name }} {{ user.last_name }}{% elif user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}!</span></h3>
-            <p class="text-muted mb-0">{{ "now"|date:"l, d F Y" }}</p>
+            <h3 class="mb-1 text-white">Hoş Geldiniz, <span>{% if user.first_name %}{{ user.first_name }}{% else %}{{
+                    user.username }}{% endif %}!</span></h3>
+            <p class="mb-0 text-white-50">{{ "now"|date:"l, d F Y" }}</p>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary">
-                <i class="bi bi-person-circle"></i> Profil
+            <a href="{% url 'accounts:profile' %}" class="btn btn-glass">
+                <i class="bi bi-person-circle"></i> Profilim
             </a>
         </div>
     </div>
@@ -32,9 +34,6 @@
                 <h3>{{ toplam_urun_sayisi }}</h3>
                 <p>Toplam Ürün</p>
             </div>
-            <div class="stat-link">
-                <a href="{% url 'stok:index' %}"><i class="bi bi-arrow-right"></i></a>
-            </div>
         </div>
     </div>
 
@@ -47,9 +46,6 @@
             <div class="stat-content">
                 <h3>{{ stoksuz_urunler }}</h3>
                 <p>Stoksuz Ürün</p>
-            </div>
-            <div class="stat-link">
-                <a href="{% url 'stok:index' %}?stok_durumu=stoksuz"><i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -65,6 +61,18 @@
             </div>
         </div>
     </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ musteri_sayisi }}</h3>
+                <p>Aktif Müşteri</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Cari ve Fatura İstatistikleri -->
@@ -77,9 +85,6 @@
             <div class="stat-content">
                 <h3>{{ toplam_cari_sayisi }}</h3>
                 <p>Toplam Cari</p>
-            </div>
-            <div class="stat-link">
-                <a href="{% url 'cari:index' %}"><i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -105,16 +110,13 @@
                 <h3>{{ bu_ay_fatura }}</h3>
                 <p>Bu Ay Fatura</p>
             </div>
-            <div class="stat-link">
-                <a href="{% url 'fatura:index' %}"><i class="bi bi-arrow-right"></i></a>
-            </div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6">
         <div class="stat-card stat-success">
             <div class="stat-icon">
-                <i class="bi bi-cash"></i>
+                <i class="bi bi-cash-coin"></i>
             </div>
             <div class="stat-content">
                 <h3>{{ bu_ay_ciro|floatformat:2|default:"0" }} ₺</h3>
@@ -124,35 +126,6 @@
     </div>
 </div>
 
-<!-- Satış Trendleri -->
-<div class="row g-4 mb-4">
-    <div class="col-lg-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-0 pb-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-graph-up text-primary"></i> Son 6 Ay Satış Trendi</h5>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary active">Aylık</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="satisGrafik" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-0">
-                <h5 class="mb-0"><i class="bi bi-pie-chart text-info"></i> Ürün Kategori Dağılımı</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="kategoriGrafik"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Günlük/Haftalık Satışlar -->
 <div class="row g-4 mb-4">
@@ -182,24 +155,24 @@
 
     <div class="col-lg-3 col-md-6">
         <div class="mini-stat-card">
-            <div class="mini-stat-icon bg-success">
-                <i class="bi bi-calendar-month"></i>
+            <div class="mini-stat-icon bg-warning">
+                <i class="bi bi-truck"></i>
             </div>
             <div class="mini-stat-content">
-                <h4>{{ gecen_ay_ciro|floatformat:2|default:"0" }} ₺</h4>
-                <p>Geçen Ay Ciro</p>
+                <h4>{{ tedarikci_sayisi }}</h4>
+                <p>Tedarikçi</p>
             </div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6">
         <div class="mini-stat-card">
-            <div class="mini-stat-icon bg-warning">
-                <i class="bi bi-clock-history"></i>
+            <div class="mini-stat-icon bg-secondary">
+                <i class="bi bi-files"></i>
             </div>
             <div class="mini-stat-content">
-                <h4>{{ bekleyen_faturalar }}</h4>
-                <p>Bekleyen Faturalar</p>
+                <h4>{{ toplam_fatura_sayisi }}</h4>
+                <p>Toplam Fatura</p>
             </div>
         </div>
     </div>
@@ -208,7 +181,7 @@
 <!-- En Çok Satan Ürünler ve Vadesi Yaklaşan Faturalar -->
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0">
                 <h5 class="mb-0"><i class="bi bi-trophy text-warning"></i> Bu Ay En Çok Satan Ürünler</h5>
             </div>
@@ -250,32 +223,24 @@
         </div>
     </div>
 
+    <!-- Stoksuz Ürünler -->
     <div class="col-lg-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0">
-                <h5 class="mb-0"><i class="bi bi-calendar-x text-danger"></i> Vadesi Yaklaşan Faturalar (7 Gün)</h5>
+                <h5 class="mb-0"><i class="bi bi-exclamation-octagon text-danger"></i> Stoksuz Ürünler</h5>
             </div>
             <div class="card-body">
-                {% if vadesi_yaklasan %}
+                {% if stoksuz_urun_listesi %}
                 <div class="list-group list-group-flush">
-                    {% for fatura in vadesi_yaklasan %}
+                    {% for urun in stoksuz_urun_listesi|slice:":5" %}
                     <div class="list-group-item border-0 px-0">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>
-                                    <a href="{% url 'fatura:detay' fatura.pk %}" class="text-decoration-none">
-                                        {{ fatura.fatura_no }}
-                                    </a>
-                                </strong>
+                                <strong>{{ urun.ad }}</strong>
                                 <br>
-                                <small class="text-muted">{{ fatura.cari.ad_soyad|default:"-" }}</small>
+                                <small class="text-muted">{{ urun.barkod|default:"Barkodsuz" }}</small>
                             </div>
-                            <div class="text-end">
-                                <span class="badge bg-warning">{{ fatura.fatura_tarihi|date:"d.m.Y" }}</span>
-                                <br>
-                                <small class="text-muted"><strong>{{ fatura.genel_toplam|floatformat:2 }}
-                                        ₺</strong></small>
-                            </div>
+                            <span class="badge bg-danger">0 Stok</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -283,7 +248,7 @@
                 {% else %}
                 <div class="text-center py-4">
                     <i class="bi bi-check-circle" style="font-size: 3rem; color: #28a745;"></i>
-                    <p class="text-muted mt-3">Vadesi yaklaşan fatura yok</p>
+                    <p class="text-muted mt-3">Tüm ürünler stokta mevcut</p>
                 </div>
                 {% endif %}
             </div>
@@ -393,161 +358,144 @@
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-    .welcome-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 25px 30px;
-        border-radius: 15px;
-        color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    /* * DASHBOARD PREMIUM UI STYLE PACK 
+ * Özellikler: Mesh Gradient, Glassmorphism, CSS Variables, Responsive Design
+ */
+
+    :root {
+        /* Renk Paleti */
+        --dash-primary: #6366f1;
+        --dash-primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        --dash-success: #22c55e;
+        --dash-success-gradient: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+        --dash-warning: #f59e0b;
+        --dash-warning-gradient: linear-gradient(135deg, #f59e0b 0%, #ed8936 100%);
+        --dash-danger: #ef4444;
+        --dash-danger-gradient: linear-gradient(135deg, #ef4444 0%, #e11d48 100%);
+        --dash-info: #0ea5e9;
+        --dash-info-gradient: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+
+        /* Arka Plan ve Gölgeler */
+        --dash-bg: #f8fafc;
+        --card-bg: rgba(255, 255, 255, 0.9);
+        --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+        /* Geçişler */
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* Genel Sayfa Ayarları */
+    body {
+        background-color: var(--dash-bg);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* 1. Hoşgeldiniz Banner - Dinamik Mesh Gradient */
+    .welcome-banner {
+        background: rgb(42, 82, 152);
+        background-size: 200% 200%;
+        animation: meshGradient 15s ease infinite;
+        padding: 35px 40px;
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.5);
+        margin-bottom: 2rem;
+    }
+
+    .btn-glass {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        transition: var(--transition);
+    }
+
+    .btn-glass:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .text-white-50 {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    @keyframes meshGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* 2. Ana İstatistik Kartları (Stat Cards) */
     .stat-card {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 18px;
+        padding: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: var(--card-shadow);
         display: flex;
         align-items: center;
         gap: 20px;
-        transition: all 0.3s;
+        transition: var(--transition);
         position: relative;
         overflow: hidden;
+        height: 100%;
     }
 
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--card-shadow-hover);
+        background: #ffffff;
+    }
+
+    /* Kartın soluna renkli vurgu çizgisi */
     .stat-card::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
-        width: 4px;
+        width: 6px;
         height: 100%;
-        transition: width 0.3s;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .stat-card:hover::before {
-        width: 100%;
-        opacity: 0.1;
+        transition: var(--transition);
     }
 
     .stat-primary::before {
-        background: #667eea;
+        background: var(--dash-primary);
     }
 
     .stat-success::before {
-        background: #28a745;
+        background: var(--dash-success);
     }
 
     .stat-warning::before {
-        background: #ffc107;
+        background: var(--dash-warning);
     }
 
     .stat-danger::before {
-        background: #dc3545;
+        background: var(--dash-danger);
     }
 
     .stat-info::before {
-        background: #17a2b8;
+        background: var(--dash-info);
     }
 
+    /* İkon Tasarımı */
     .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        color: white;
-        flex-shrink: 0;
-    }
-
-    .stat-primary .stat-icon {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .stat-success .stat-icon {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    }
-
-    .stat-warning .stat-icon {
-        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-    }
-
-    .stat-danger .stat-icon {
-        background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%);
-    }
-
-    .stat-info .stat-icon {
-        background: linear-gradient(135deg, #17a2b8 0%, #00bcd4 100%);
-    }
-
-    .stat-content {
-        flex: 1;
-    }
-
-    .stat-content h3 {
-        margin: 0;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2c3e50;
-    }
-
-    .stat-content p {
-        margin: 5px 0 0;
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    .stat-link {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #f8f9fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-    }
-
-    .stat-link a {
-        color: #667eea;
-        text-decoration: none;
-        font-size: 1.2rem;
-    }
-
-    .stat-card:hover .stat-link {
-        background: #667eea;
-    }
-
-    .stat-card:hover .stat-link a {
-        color: white;
-    }
-
-    .mini-stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        transition: all 0.3s;
-    }
-
-    .mini-stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-    }
-
-    .mini-stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -556,32 +504,132 @@
         flex-shrink: 0;
     }
 
-    .mini-stat-content h4 {
+    .stat-primary .stat-icon {
+        background: var(--dash-primary-gradient);
+    }
+
+    .stat-success .stat-icon {
+        background: var(--dash-success-gradient);
+    }
+
+    .stat-warning .stat-icon {
+        background: var(--dash-warning-gradient);
+    }
+
+    .stat-danger .stat-icon {
+        background: var(--dash-danger-gradient);
+    }
+
+    .stat-info .stat-icon {
+        background: var(--dash-info-gradient);
+    }
+
+    /* İçerik ve Fontlar */
+    .stat-content h3 {
         margin: 0;
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #2c3e50;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.5px;
     }
 
-    .mini-stat-content p {
-        margin: 3px 0 0;
-        color: #6c757d;
+    .stat-content p {
+        margin: 0;
+        color: #64748b;
         font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
     }
 
+    /* 3. Mini İstatistik Kartları */
+    .mini-stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        border: 1px solid #f1f5f9;
+    }
+
+    .mini-stat-card:hover {
+        border-color: var(--dash-primary);
+        transform: scale(1.02);
+    }
+
+    .mini-stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+    }
+
+    /* 4. Tablo ve İçerik Kartları */
     .card {
-        border-radius: 15px;
         border: none;
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
     }
 
     .card-header {
-        border-radius: 15px 15px 0 0 !important;
+        background: #ffffff;
+        padding: 20px 25px;
+        border-bottom: 1px solid #f1f5f9;
     }
 
+    .card-header h5 {
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-top: none;
+    }
+
+    /* 5. Liste Öğeleri ve Badge'ler */
+    .list-group-item {
+        transition: var(--transition);
+        border-radius: 12px !important;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+    }
+
+    .list-group-item:hover {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+    }
+
+    .badge {
+        padding: 0.6em 1em;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    /* Responsive Düzenlemeler */
     @media (max-width: 768px) {
+        .welcome-banner {
+            padding: 25px;
+        }
+
         .stat-card {
-            flex-direction: column;
-            text-align: center;
+            padding: 15px;
+        }
+
+        .stat-content h3 {
+            font-size: 1.4rem;
         }
     }
 </style>
@@ -590,136 +638,8 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Satış Grafiği
-        const satisCtx = document.getElementById('satisGrafik');
-        if (satisCtx) {
-            const satisData = {{ son_6_ay_satis| safe
-        }
-    };
-    if (satisData && satisData.length > 0) {
-        new Chart(satisCtx, {
-            type: 'line',
-            data: {
-                labels: satisData.map(item => item.ay_adi),
-                datasets: [{
-                    label: 'Satış (₺)',
-                    data: satisData.map(item => item.satis),
-                    borderColor: 'rgb(102, 126, 234)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgb(102, 126, 234)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        padding: 12,
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        callbacks: {
-                            label: function (context) {
-                                return 'Satış: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function (value) {
-                                return value.toLocaleString('tr-TR') + ' ₺';
-                            },
-                            font: { size: 11 }
-                        },
-                        grid: {
-                            color: 'rgba(0,0,0,0.05)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: { size: 11 }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-    }
-
-    // Kategori Dağılım Grafiği
-    const kategoriCtx = document.getElementById('kategoriGrafik');
-    if (kategoriCtx) {
-        const kategoriData = {{ urun_kategori_dagilimi| safe
-    }};
-    if (kategoriData && Object.keys(kategoriData).length > 0) {
-        const labels = Object.keys(kategoriData);
-        const data = Object.values(kategoriData);
-        const colors = [
-            'rgba(102, 126, 234, 0.8)',
-            'rgba(40, 167, 69, 0.8)',
-            'rgba(255, 193, 7, 0.8)',
-            'rgba(220, 53, 69, 0.8)',
-            'rgba(23, 162, 184, 0.8)',
-            'rgba(108, 117, 125, 0.8)',
-            'rgba(255, 87, 34, 0.8)',
-            'rgba(156, 39, 176, 0.8)'
-        ];
-
-        new Chart(kategoriCtx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: colors.slice(0, labels.length),
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: { size: 12 }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        padding: 12,
-                        callbacks: {
-                            label: function (context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return label + ': ' + value + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-    }
+        // Grafikler kaldırıldı
+    });
 });
 </script>
 {% endblock %}

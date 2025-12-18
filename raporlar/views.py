@@ -125,14 +125,14 @@ def dashboard(request: Any) -> Any:
         ).count()
         
         bu_ay_ciro = Fatura.objects.filter(
+            fatura_tipi='Satis',
             fatura_tarihi__year=timezone.now().year,
-            fatura_tarihi__month=timezone.now().month,
-            durum='Odendi'
+            fatura_tarihi__month=timezone.now().month
         ).aggregate(
             toplam=Sum('genel_toplam')
         )['toplam'] or Decimal('0.00')
         
-        bekleyen_faturalar = Fatura.objects.filter(durum='Beklemede').count()
+        bekleyen_faturalar = Fatura.objects.filter(durum='AcikHesap').count()
         
         son_6_ay = []
         for i in range(6):
@@ -201,8 +201,7 @@ def dashboard(request: Any) -> Any:
         gecen_ay_ciro = Fatura.objects.filter(
             fatura_tipi='Satis',
             fatura_tarihi__gte=gecen_ay_baslangic,
-            fatura_tarihi__lte=gecen_ay_bitis,
-            durum='Odendi'
+            fatura_tarihi__lte=gecen_ay_bitis
         ).aggregate(toplam=Sum('genel_toplam'))['toplam'] or Decimal('0.00')
         
         en_cok_satan_urunler = FaturaKalem.objects.filter(
@@ -216,7 +215,7 @@ def dashboard(request: Any) -> Any:
         
         # Vade tarihi kaldırıldığı için bekleyen faturaları göster
         bekleyen_faturalar = Fatura.objects.filter(
-            durum='Beklemede'
+            durum='AcikHesap'
         ).order_by('fatura_tarihi')[:10]
         
         context = {

@@ -41,9 +41,12 @@ from stoktakip.services.fatura_kalem_service import (
 )
 from stoktakip.services.stok_service import create_stok_hareketleri_from_fatura
 from stoktakip.services.cari_service import create_or_update_cari_hareketi_from_fatura
-
+from django.contrib.auth.decorators import login_required
+from typing import Any
+import logging
 
 logger = logging.getLogger(__name__)
+
 
 
 @cache_view_result(timeout=300, key_prefix='fatura_index')
@@ -183,301 +186,77 @@ def index(request: Any) -> Any:
 @login_required
 def fatura_ekle(request: Any) -> Any:
     """
-    Yeni fatura oluşturur.
-    
-    Transaction içinde çalışır, hata durumunda rollback yapar.
-    Input validation ve error handling ile güvenli hale getirilmiştir.
+    Yeni fatura ve bağlı kalemlerini servis katmanı üzerinden oluşturur.
+    Hata durumunda veritabanı bütünlüğünü korumak için gerekli temizlikleri yapar.
     """
-    from decimal import Decimal, ROUND_HALF_UP
-    from django.utils import timezone
-    from datetime import timedelta
-    from django.core.exceptions import ValidationError
-    
+    # 1. Fatura tipini belirle (URL parametresinden veya varsayılan)
     try:
         tip = sanitize_string(request.GET.get('tip', 'Satis'), max_length=10)
         if tip not in ['Satis', 'Alis']:
             tip = 'Satis'
     except Exception:
         tip = 'Satis'
-    
+
+    # Ürün listesi (Formda dropdown için her durumda gerekli)
+    urunler = Urun.objects.all().order_by('ad')
+    title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
+
     if request.method == 'POST':
-        try:
-            # Input validation
-            post_data = request.POST.copy()
-            if 'fatura_tipi' not in post_data:
-                post_data['fatura_tipi'] = tip
-            
-            fatura_form = FaturaForm(post_data)
-            
-            if fatura_form.is_valid():
-                # Servis katmanını kullanarak fatura oluştur
-                fatura = create_fatura(fatura_form, request.user, request)
-                    
-                    # Servis katmanını kullanarak kalemleri ekle
-                    try:
-                        kalem_sayisi, hata_sayisi = add_fatura_kalemler_from_post_data(
-                            fatura, request.POST, request.user, request
-                        )
-                    except ValidationError as ve:
-                        # En az bir kalem eklenemezse faturayı sil ve hata göster
-                        fatura.delete()
-                        messages.error(request, str(ve))
-                        urunler = Urun.objects.all().order_by('ad')
-                        title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
-                        return render(request, 'fatura/fatura_form.html', {
-                            'form': fatura_form,
-                            'title': title,
-                            'tip': tip,
-                            'urunler': urunler
-                        })
-                    
-                    # Eski kalem ekleme kodu kaldırıldı - servis katmanı kullanılıyor
-                            # Input validation - Basitleştirilmiş
-                            logger.info(f"Kalem işleniyor: {kalem_data}")
-                            
-                            # Ürün ID - Direkt int'e çevir
-                            try:
-                                urun_id = int(str(kalem_data['urun_id']).strip())
-                                if urun_id <= 0:
-                                    raise ValueError("Ürün ID pozitif olmalı")
-                            except (ValueError, TypeError) as ve:
-                                logger.error(f"Geçersiz ürün ID: {kalem_data['urun_id']}, hata: {ve}")
-                                hata_sayisi += 1
-                                continue
-                            
-                            # Ürün kontrolü - Önce ürünü al
-                            try:
-                                urun = Urun.objects.get(pk=urun_id)
-                            except Urun.DoesNotExist:
-                                logger.error(f"Ürün bulunamadı: ID={urun_id}")
-                                hata_sayisi += 1
-                                continue
-                            
-                            # Miktar - Basit dönüşüm
-                            try:
-                                miktar_str = str(kalem_data['miktar']).replace(',', '.').strip()
-                                miktar_float = float(miktar_str)
-                                miktar = int(miktar_float)
-                                if miktar <= 0:
-                                    raise ValueError("Miktar pozitif olmalı")
-                            except (ValueError, TypeError) as ve:
-                                logger.error(f"Geçersiz miktar: {kalem_data['miktar']}, hata: {ve}")
-                                hata_sayisi += 1
-                                continue
-                            
-                            # KDV oranı - Sabit %20
-                            kdv_orani = 20
-                            
-                            # Fiyat hesaplama - Fatura tipine göre varsayılan fiyat
-                            birim_fiyat = None
-                            try:
-                                # Önce KDV dahil fiyat kontrolü
-                                kdv_dahil_str = str(kalem_data.get('kdv_dahil_fiyat', '')).strip().replace(',', '.')
-                                if kdv_dahil_str and kdv_dahil_str != '0' and kdv_dahil_str != '0.00':
-                                    try:
-                                        kdv_dahil_float = float(kdv_dahil_str)
-                                        if kdv_dahil_float > 0:
-                                            # sanitize_decimal float döndürür, Decimal'e çevir
-                                            kdv_dahil_float_sanitized = sanitize_decimal(kdv_dahil_str, min_value=0)
-                                            kdv_dahil = Decimal(str(kdv_dahil_float_sanitized))
-                                            # birim_fiyat = kdv_dahil / (1 + kdv_orani / 100)
-                                            if kdv_orani == 0:
-                                                # KDV yoksa, birim_fiyat = kdv_dahil_fiyat
-                                                birim_fiyat = kdv_dahil
-                                            else:
-                                                birim_fiyat = kdv_dahil / (Decimal('1') + Decimal(str(kdv_orani)) / Decimal('100'))
-                                            # 2 ondalık basamağa yuvarla
-                                            birim_fiyat = birim_fiyat.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                                    except (ValueError, TypeError, ValidationError) as ve:
-                                        logger.warning(f"KDV dahil fiyat hesaplama hatası: {ve}")
-                                
-                                # Eğer KDV dahil fiyat yoksa, birim fiyat kontrolü
-                                if birim_fiyat is None:
-                                    birim_fiyat_str = str(kalem_data.get('birim_fiyat', '')).strip().replace(',', '.')
-                                    if birim_fiyat_str and birim_fiyat_str != '0' and birim_fiyat_str != '0.00':
-                                        try:
-                                            birim_fiyat_float = float(birim_fiyat_str)
-                                            if birim_fiyat_float > 0:
-                                                birim_fiyat = Decimal(str(sanitize_decimal(birim_fiyat_str, min_value=0)))
-                                        except (ValueError, TypeError, ValidationError) as ve:
-                                            logger.warning(f"Birim fiyat hesaplama hatası: {ve}")
-                                
-                                # Eğer hala fiyat yoksa, varsayılan fiyat (KDV dahil olarak geliyor)
-                                if birim_fiyat is None:
-                                    kdv_dahil_fiyat = None
-                                    if fatura.fatura_tipi == 'Alis':
-                                        kdv_dahil_fiyat = Decimal(str(urun.alis_fiyati)) if urun.alis_fiyati and urun.alis_fiyati > 0 else (Decimal(str(urun.fiyat)) if urun.fiyat else Decimal('0.00'))
-                                    else:
-                                        kdv_dahil_fiyat = Decimal(str(urun.fiyat)) if urun.fiyat else Decimal('0.00')
-                                    
-                                    if kdv_dahil_fiyat and kdv_dahil_fiyat > 0:
-                                        # KDV dahil fiyattan KDV hariç fiyatı hesapla
-                                        birim_fiyat = kdv_dahil_fiyat / (Decimal('1') + Decimal('20') / Decimal('100'))
-                                        birim_fiyat = birim_fiyat.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                                    else:
-                                        birim_fiyat = Decimal('0.00')
-                                        
-                            except Exception as ve:
-                                logger.warning(f"Fiyat hesaplama genel hatası: {ve}, varsayılan fiyat kullanılıyor")
-                                # Varsayılan fiyat (KDV dahil olarak geliyor)
-                                kdv_dahil_fiyat = None
-                                if fatura.fatura_tipi == 'Alis':
-                                    kdv_dahil_fiyat = Decimal(str(urun.alis_fiyati)) if urun.alis_fiyati and urun.alis_fiyati > 0 else (Decimal(str(urun.fiyat)) if urun.fiyat else Decimal('0.00'))
-                                else:
-                                    kdv_dahil_fiyat = Decimal(str(urun.fiyat)) if urun.fiyat else Decimal('0.00')
-                                
-                                if kdv_dahil_fiyat and kdv_dahil_fiyat > 0:
-                                    # KDV dahil fiyattan KDV hariç fiyatı hesapla
-                                    birim_fiyat = kdv_dahil_fiyat / (Decimal('1') + Decimal('20') / Decimal('100'))
-                                    birim_fiyat = birim_fiyat.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                                else:
-                                    birim_fiyat = Decimal('0.00')
-                            
-                            # Kalem oluştur - Basitleştirilmiş
-                            try:
-                                # Ürün adını al (max 200 karakter)
-                                urun_adi = str(urun.ad)[:200]
-                                
-                                # Ara toplam hesapla (miktar * birim_fiyat) - KDV hariç
-                                # 2 ondalık basamağa yuvarla
-                                from decimal import ROUND_HALF_UP
-                                ara_toplam = Decimal(str(miktar)) * birim_fiyat
-                                ara_toplam = ara_toplam.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                                
-                                # KDV tutarını hesapla - 2 ondalık basamağa yuvarla
-                                kdv_tutari = (ara_toplam * (Decimal(str(kdv_orani)) / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                                
-                                # Toplam tutar (Model'de ara_toplam olarak kaydediliyor, yani KDV hariç)
-                                toplam_tutar = ara_toplam
-                                
-                                # FaturaKalem oluştur
-                                kalem = FaturaKalem(
-                                    fatura=fatura,
-                                    urun=urun,
-                                    urun_adi=urun_adi,
-                                    miktar=miktar,
-                                    birim_fiyat=birim_fiyat,
-                                    kdv_orani=kdv_orani,
-                                    kdv_tutari=kdv_tutari,
-                                    toplam_tutar=toplam_tutar,
-                                    sira_no=kalem_sayisi + 1
-                                )
-                                
-                                # Model validation
-                                kalem.full_clean()
-                                kalem.save()
-                                
-                                kalem_sayisi += 1
-                                logger.info(f"Kalem başarıyla oluşturuldu: Ürün={urun.ad}, Miktar={miktar}, Fiyat={birim_fiyat}, KDV={kdv_orani}, Toplam={toplam_tutar}")
-                            except Exception as create_error:
-                                error_detail = f"{type(create_error).__name__}: {str(create_error)}"
-                                logger.error(f"FaturaKalem oluşturulurken hata: {error_detail}", exc_info=True)
-                                hata_sayisi += 1
-                                # İlk hatayı kullanıcıya göster
-                                if hata_sayisi == 1:
-                                    messages.error(request, f'Ürün eklenirken hata: {error_detail}')
-                                continue
-                            
-                        except Exception as e:
-                            hata_sayisi += 1
-                            error_detail = f"{type(e).__name__}: {str(e)}"
-                            logger.error(f"Fatura kalem eklenirken beklenmeyen hata: {error_detail}", exc_info=True)
-                            # Hata detayını mesaj olarak ekle
-                            if hata_sayisi == 1:  # İlk hatayı göster
-                                messages.error(request, f'Ürün eklenirken hata: {error_detail}')
-                                continue
-                    
-                    # En az bir kalem olmalı
-                    if kalem_sayisi == 0:
-                        fatura.delete()  # Transaction rollback için
-                        # Daha detaylı hata mesajı
-                        if len(gecerli_kalemler) == 0:
-                            messages.error(request, 'Lütfen en az bir ürün seçiniz ve miktar giriniz!')
-                        else:
-                            # Hata detaylarını logla
-                            logger.error(f"Fatura ekleme hatası: {len(gecerli_kalemler)} geçerli kalem var ama hiçbiri eklenemedi. Hata sayısı: {hata_sayisi}")
-                            logger.error(f"POST verileri - urun_ids: {urun_ids}, miktarlar: {miktarlar}")
-                            messages.error(request, 
-                                f'Ürün eklenirken hata oluştu. Lütfen şunları kontrol ediniz:\n'
-                                f'- Ürün seçildiğinden emin olun (boş "Seçiniz" seçeneği değil)\n'
-                                f'- Miktar 1 veya daha büyük olmalı\n'
-                                f'- Fiyat bilgileri geçerli olmalı (otomatik doldurulur)\n'
-                                f'(Hata sayısı: {hata_sayisi}, Geçerli kalem sayısı: {len(gecerli_kalemler)})')
-                        urunler = Urun.objects.all().order_by('ad')
-                        title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
-                        return render(request, 'fatura/fatura_form.html', {
-                            'form': fatura_form,
-                            'title': title,
-                            'tip': tip,
-                            'urunler': urunler
-                        })
-                    
-                    # Başarı mesajı
-                    if hata_sayisi > 0:
-                        messages.warning(request, 
-                                        f'Fatura oluşturuldu ancak {hata_sayisi} ürün eklenemedi.')
-                    
-                    messages.success(request, f'Fatura {fatura.fatura_no} başarıyla oluşturuldu.')
-                    return redirect('fatura:detay', pk=fatura.pk)
-            else:
-                # Form validation hataları - detaylı hata mesajları göster
-                error_messages = []
-                for field, errors in fatura_form.errors.items():
-                    for error in errors:
-                        field_label = fatura_form.fields[field].label if field in fatura_form.fields else field
-                        error_messages.append(f"{field_label}: {error}")
-                
-                if error_messages:
-                    messages.error(request, 'Form hataları:\n' + '\n'.join(error_messages))
-                else:
-                    messages.error(request, 'Lütfen form hatalarını düzeltin.')
-                
-                # Form hatalarıyla birlikte formu tekrar göster
-                urunler = Urun.objects.all().order_by('ad')
-                title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
-                return render(request, 'fatura/fatura_form.html', {
-                    'form': fatura_form,
-                    'title': title,
-                    'tip': tip,
-                    'urunler': urunler
-                })
-                
-        except Exception as e:
-            logger.error(f"Fatura ekleme hatası: {str(e)}", exc_info=True)
-            # Daha detaylı hata mesajı
-            error_detail = f"{type(e).__name__}: {str(e)}"
-            messages.error(request, f'Fatura oluşturulurken bir hata oluştu: {error_detail}')
-            # Formu tekrar göster
+        post_data = request.POST.copy()
+        if 'fatura_tipi' not in post_data:
+            post_data['fatura_tipi'] = tip
+        
+        fatura_form = FaturaForm(post_data)
+        
+        if fatura_form.is_valid():
+            fatura = None
             try:
-                # Eğer fatura_form tanımlıysa onu kullan, değilse yeni form oluştur
-                if 'fatura_form' in locals() and fatura_form is not None:
-                    form_to_show = fatura_form
-                else:
-                    bugun = timezone.now().date()
-                    form_to_show = FaturaForm(initial={
-                        'fatura_tipi': tip,
-                        'fatura_tarihi': bugun,
-                        'durum': 'AcikHesap',
-                        'iskonto_orani': 0
+                # 2. Servis katmanını kullanarak ana faturayı oluştur
+                # Bu işlem genellikle stok/cari hareketlerini de tetikler
+                fatura = create_fatura(fatura_form, request.user, request)
+                
+                # 3. Servis katmanını kullanarak POST verisindeki kalemleri işle
+                # add_fatura_kalemler_from_post_data fonksiyonu miktar ve fiyat validasyonlarını yapar
+                kalem_sayisi, hata_sayisi = add_fatura_kalemler_from_post_data(
+                    fatura, request.POST, request.user, request
+                )
+                
+                # 4. İş kuralı: En az bir kalem eklenmiş olmalı
+                if kalem_sayisi == 0:
+                    if fatura:
+                        fatura.delete()
+                    messages.error(request, 'Lütfen en az bir geçerli ürün seçiniz ve miktar giriniz.')
+                    return render(request, 'fatura/fatura_form.html', {
+                        'form': fatura_form,
+                        'title': title,
+                        'tip': tip,
+                        'urunler': urunler
                     })
-            except:
-                bugun = timezone.now().date()
-                form_to_show = FaturaForm(initial={
-                    'fatura_tipi': tip,
-                    'fatura_tarihi': bugun,
-                    'durum': 'AcikHesap',
-                    'iskonto_orani': 0
-                })
-            
-            urunler = Urun.objects.all().order_by('ad')
-            title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
-            return render(request, 'fatura/fatura_form.html', {
-                'form': form_to_show,
-                'title': title,
-                'tip': tip,
-                'urunler': urunler
-            })
+
+                # Başarı durumu
+                if hata_sayisi > 0:
+                    messages.warning(request, f'Fatura oluşturuldu ancak {hata_sayisi} satırda hata nedeniyle ekleme yapılamadı.')
+                else:
+                    messages.success(request, f'Fatura {fatura.fatura_no} başarıyla oluşturuldu.')
+                
+                return redirect('fatura:detay', pk=fatura.pk)
+
+            except ValidationError as ve:
+                if fatura:
+                    fatura.delete()
+                messages.error(request, f"Doğrulama Hatası: {str(ve)}")
+            except Exception as e:
+                if fatura:
+                    fatura.delete()
+                logger.error(f"Fatura ekleme işlemi sırasında kritik hata: {str(e)}", exc_info=True)
+                messages.error(request, "Beklenmedik bir hata oluştu. Veriler kaydedilemedi.")
+        else:
+            # Form validasyon hatalarını kullanıcıya göster
+            for field, errors in fatura_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{fatura_form.fields[field].label}: {error}")
     else:
+        # GET isteği: Boş form oluştur
         bugun = timezone.now().date()
         fatura_form = FaturaForm(initial={
             'fatura_tipi': tip,
@@ -485,13 +264,7 @@ def fatura_ekle(request: Any) -> Any:
             'durum': 'AcikHesap',
             'iskonto_orani': 0
         })
-    
-    urunler = Urun.objects.all().order_by('ad')
-    title = 'Yeni Alış Faturası' if tip == 'Alis' else 'Yeni Satış Faturası'
-    
-    if request.method == 'POST' and not fatura_form.is_valid():
-        messages.error(request, 'Lütfen form hatalarını düzeltin.')
-    
+
     return render(request, 'fatura/fatura_form.html', {
         'form': fatura_form,
         'title': title,
@@ -564,8 +337,6 @@ def fatura_duzenle(request: Any, pk: int) -> Any:
                     
                     messages.success(request, 'Fatura başarıyla güncellendi.')
                     return redirect('fatura:detay', pk=fatura.pk)
-                else:
-                    messages.error(request, 'Lütfen form hatalarını düzeltin.')
                 else:
                     messages.error(request, 'Lütfen form hatalarını düzeltin.')
             except ValidationError as e:
@@ -809,25 +580,4 @@ def kalem_sil(request: Any, pk: int) -> Any:
         raise
 
 
-@handle_view_errors(
-    error_message="Fatura kopyalanırken bir hata oluştu.",
-    redirect_url="fatura:index"
-)
-@login_required
-def fatura_kopyala(request: Any, pk: int) -> Any:
-    """
-    Fatura kopyalar.
-    
-    Servis katmanı kullanarak faturayı ve kalemlerini kopyalar.
-    """
-    try:
-        orijinal_fatura = get_object_or_404(Fatura, pk=pk)
-        
-        # Servis katmanını kullanarak kopyala
-        yeni_fatura = copy_fatura(orijinal_fatura, request.user, request)
-        
-        messages.success(request, f'Fatura başarıyla kopyalandı. Yeni fatura no: {yeni_fatura.fatura_no}')
-        return redirect('fatura:detay', pk=yeni_fatura.pk)
-    except Exception as e:
-        logger.error(f"Fatura kopyalama hatası: {str(e)}", exc_info=True)
-        raise
+

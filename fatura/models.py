@@ -17,7 +17,7 @@ class Fatura(models.Model):
     ]
 
     fatura_no = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="Fatura No")
-    cari = models.ForeignKey(Cari, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cari")
+    cari = models.ForeignKey('cari.Cari', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cari")
     fatura_tarihi = models.DateField(verbose_name="Fatura Tarihi")
     toplam_tutar = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Toplam Tutar")
     kdv_tutari = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="KDV Tutarı")
@@ -124,7 +124,7 @@ class Fatura(models.Model):
 
 class FaturaKalem(models.Model):
     fatura = models.ForeignKey(Fatura, on_delete=models.CASCADE, related_name='kalemler', verbose_name="Fatura")
-    urun = models.ForeignKey(Urun, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ürün")
+    urun = models.ForeignKey('stok.Urun', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ürün")
     urun_adi = models.CharField(max_length=100, verbose_name="Ürün Adı")
     miktar = models.IntegerField(default=1, verbose_name="Miktar")
     birim_fiyat = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Birim Fiyat")
