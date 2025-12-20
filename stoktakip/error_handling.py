@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def handle_view_errors(
     error_message: str = "Bir hata oluştu. Lütfen tekrar deneyin.",
     redirect_url: Optional[str] = None,
-    log_error: bool = True
+    log_error: bool = False 
 ):
     """
     View fonksiyonları için error handling decorator'ı.
@@ -122,19 +122,6 @@ def handle_api_errors(
     error_message: str = "API request failed",
     status_code: int = 500
 ):
-    """
-    API endpoint'leri için error handling decorator'ı.
-    DRF ViewSet metodları ve function-based API view'ları için çalışır.
-    
-    Args:
-        error_message: Hata mesajı
-        status_code: HTTP status code
-    
-    Usage:
-        @handle_api_errors(error_message="Ürün bilgisi alınamadı", status_code=400)
-        def urun_bilgi_api(request, urun_id):
-            ...
-    """
     def decorator(view_func: Callable) -> Callable:
         @wraps(view_func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -172,16 +159,7 @@ def handle_api_errors(
 
 
 def database_transaction(view_func: Callable) -> Callable:
-    """
-    Database transaction yönetimi için decorator.
-    Hata durumunda otomatik rollback yapar.
-    
-    Usage:
-        @database_transaction
-        def fatura_ekle(request):
-            with transaction.atomic():
-                ...
-    """
+
     @wraps(view_func)
     def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:
         try:
