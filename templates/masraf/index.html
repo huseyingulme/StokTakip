@@ -19,14 +19,6 @@
                            placeholder="Masraf no veya açıklama ile ara..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
-                    <select name="kategori" class="form-select">
-                        <option value="">Tüm Kategoriler</option>
-                        {% for kat in kategoriler %}
-                        <option value="{{ kat.pk }}" {% if kategori_filter == kat.pk|stringformat:"s" %}selected{% endif %}>{{ kat.ad }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
                     <select name="durum" class="form-select">
                         <option value="">Tüm Durumlar</option>
                         <option value="odendi" {% if durum_filter == 'odendi' %}selected{% endif %}>Ödendi</option>
@@ -62,7 +54,6 @@
                 <thead>
                     <tr>
                         <th>Masraf No</th>
-                        <th>Kategori</th>
                         <th>Açıklama</th>
                         <th>Tutar</th>
                         <th>Tarih</th>
@@ -75,7 +66,6 @@
                     {% for masraf in masraflar %}
                     <tr>
                         <td><strong>{{ masraf.masraf_no }}</strong></td>
-                        <td>{{ masraf.kategori.ad|default:"-" }}</td>
                         <td>{{ masraf.aciklama|truncatewords:10 }}</td>
                         <td>{{ masraf.tutar|floatformat:2 }} ₺</td>
                         <td>{{ masraf.tarih|date:"d.m.Y" }}</td>

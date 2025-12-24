@@ -5,19 +5,6 @@ from django.utils import timezone
 from decimal import Decimal
 
 
-class MasrafKategori(models.Model):
-    ad = models.CharField(max_length=100, verbose_name="Kategori Adı")
-    aciklama = models.TextField(blank=True, null=True, verbose_name="Açıklama")
-    olusturma_tarihi = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturma Tarihi")
-
-    class Meta:
-        verbose_name = "Masraf Kategorisi"
-        verbose_name_plural = "Masraf Kategorileri"
-        ordering = ['ad']
-        db_table = 'masraf_masrafkategori'
-
-    def __str__(self):
-        return self.ad
 
 
 class Masraf(models.Model):
@@ -35,7 +22,6 @@ class Masraf(models.Model):
     ]
 
     masraf_no = models.CharField(max_length=50, unique=True, verbose_name="Masraf No")
-    kategori = models.ForeignKey(MasrafKategori, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kategori")
     aciklama = models.TextField(verbose_name="Açıklama")
     tutar = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Tutar (₺)")
     tarih = models.DateField(verbose_name="Tarih")

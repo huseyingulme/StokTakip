@@ -8,8 +8,8 @@ from django.db import transaction
 from datetime import timedelta
 from typing import Any
 import logging
-from .models import MasrafKategori, Masraf
-from .forms import MasrafKategoriForm, MasrafForm
+from .models import Masraf
+from .forms import MasrafForm
 from accounts.utils import log_action
 from stoktakip.error_handling import handle_view_errors, database_transaction
 from stoktakip.security_utils import (
@@ -31,7 +31,7 @@ def index(request: Any) -> Any:
     masraf listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
     """
     try:
-        masraf_list = Masraf.objects.select_related('kategori', 'olusturan').order_by('-tarih', '-id')
+        masraf_list = Masraf.objects.select_related('olusturan').order_by('-tarih', '-id')
 
         # Arama - Input validation ile
         search_query = request.GET.get('search', '')
@@ -47,17 +47,6 @@ def index(request: Any) -> Any:
                 messages.warning(request, "Geçersiz arama sorgusu.")
                 search_query = ''
 
-        # Kategori filtresi - Input validation
-        kategori_filter = request.GET.get('kategori', '')
-        if kategori_filter:
-            try:
-                kategori_id = int(kategori_filter)
-                if MasrafKategori.objects.filter(pk=kategori_id).exists():
-                    masraf_list = masraf_list.filter(kategori_id=kategori_id)
-                else:
-                    kategori_filter = ''
-            except (ValueError, TypeError):
-                kategori_filter = ''
 
         # Durum filtresi - Input validation
         durum_filter = request.GET.get('durum', '')
@@ -104,10 +93,9 @@ def index(request: Any) -> Any:
 
         context = {
             'masraflar': masraflar,
-            'kategoriler': MasrafKategori.objects.all(),
             'toplam_tutar': toplam_tutar,
             'search_query': search_query,
-            'kategori_filter': kategori_filter,
+            'kategori_filter': '',
             'durum_filter': durum_filter,
             'tarih_baslangic': tarih_baslangic,
             'tarih_bitis': tarih_bitis,
