@@ -33,6 +33,12 @@ class CustomLoginView(LoginView):
 
     template_name = "registration/login.html"
 
+    def get_success_url(self):
+        user = self.request.user
+        if hasattr(user, 'cari_account'):
+            return reverse('musteri_paneli:index')
+        return reverse('raporlar:dashboard')
+
     def form_valid(self, form):
         response = super().form_valid(form)
 

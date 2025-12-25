@@ -12,6 +12,7 @@ import json
 from stok.models import Urun, StokHareketi
 from cari.models import Cari, CariHareketi
 from fatura.models import Fatura, FaturaKalem
+from musteri_paneli.models import Siparis
 from accounts.utils import log_action
 from stoktakip.error_handling import handle_view_errors
 from stoktakip.cache_utils import cache_view_result
@@ -213,6 +214,11 @@ def dashboard(request: Any) -> Any:
             toplam_tutar=Sum('toplam_tutar')
         ).order_by('-toplam_miktar')[:5]
         
+        # Sipariş İstatistikleri
+        toplam_siparis_sayisi = Siparis.objects.count()
+        bekleyen_siparis_sayisi = Siparis.objects.filter(durum='beklemede').count()
+        son_siparisler = Siparis.objects.all().order_by('-olusturma_tarihi')[:5]
+        
         # Vade tarihi kaldırıldığı için bekleyen faturaları göster
         bekleyen_faturalar = Fatura.objects.filter(
             durum='AcikHesap'
@@ -243,6 +249,9 @@ def dashboard(request: Any) -> Any:
             'gecen_ay_ciro': gecen_ay_ciro,
             'en_cok_satan_urunler': en_cok_satan_urunler,
             'vadesi_yaklasan': bekleyen_faturalar,
+            'toplam_siparis_sayisi': toplam_siparis_sayisi,
+            'bekleyen_siparis_sayisi': bekleyen_siparis_sayisi,
+            'son_siparisler': son_siparisler,
         }
         
         return render(request, 'raporlar/dashboard.html', context)

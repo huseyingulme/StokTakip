@@ -19,6 +19,7 @@ urlpatterns = [
     path('finans/', include('finans.urls')),
     path('kullanici-yonetimi/', include('kullanici_yonetimi.urls')),
     path('api/', include('api.urls')),
+    path('musteri-paneli/', include('musteri_paneli.urls')),
     path('', views.home, name='home'),
 ]
 

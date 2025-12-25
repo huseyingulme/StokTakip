@@ -1,0 +1,100 @@
+﻿{% extends "base.html" %}
+{% block title %}Sipariş Detayı - {{ siparis.siparis_no }}{% endblock %}
+{% block page_title %}Sipariş Yönetimi / {{ siparis.siparis_no }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Sipariş İçeriği -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-list-ul me-2"></i> Sipariş İçeriği</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="px-4 border-0">Ürün</th>
+                                <th class="border-0">Miktar</th>
+                                <th class="border-0">Birim Fiyat</th>
+                                <th class="text-end px-4 border-0">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for kalem in siparis.kalemler.all %}
+                            <tr>
+                                <td class="px-4">
+                                    <div class="fw-bold">{{ kalem.urun.ad }}</div>
+                                    <small class="text-muted">{{ kalem.urun.barkod }}</small>
+                                </td>
+                                <td>{{ kalem.miktar }} Adet</td>
+                                <td>{{ kalem.birim_fiyat|floatformat:2 }} ₺</td>
+                                <td class="text-end px-4 fw-bold text-primary">{{ kalem.toplam_tutar|floatformat:2 }} ₺
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-light-subtle">
+                            <tr>
+                                <td colspan="3" class="text-end px-4 py-3 fw-bold">Genel Toplam</td>
+                                <td class="text-end px-4 py-3 fw-bold text-primary fs-5">{{ siparis.toplam_tutar }} ₺
+</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Bilgi Kartı -->
+        <div class="card shadow-sm border-0 mb-4 h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i> Sipariş Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-1">MÜŞTERİ (CARİ)</label>
+                    <div class="fw-bold fs-5">{{ siparis.cari.ad_soyad }}</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-1">DURUM</label>
+                    {% if siparis.durum == 'beklemede' %}
+                    <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-6 w-100">Onay Bekliyor</span>
+                    {% elif siparis.durum == 'onaylandi' %}
+                    <span class="badge bg-info-subtle text-info px-3 py-2 fs-6 w-100">Hazırlanıyor</span>
+                    {% elif siparis.durum == 'faturalandi' %}
+                    <span class="badge bg-success-subtle text-success px-3 py-2 fs-6 w-100">Faturalandı</span>
+                    {% elif siparis.durum == 'reddedildi' %}
+                    <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6 w-100">Reddedildi</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-6 w-100">İptal Edildi</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-1">TARİHLER</label>
+                    <div class="small"><b>Oluşturma:</b> {{ siparis.olusturma_tarihi|date:"d.m.Y H:i" }}</div>
+                </div>
+
+                <hr class="my-4 opacity-50">
+
+                <div class="d-grid gap-2">
+                    {% if siparis.durum != 'faturalandi' %}
+                    <a href="{% url 'musteri_paneli:admin_siparis_islem' siparis.pk 'faturalandir' %}"
+                        class="btn btn-success">
+                        <i class="bi bi-receipt me-2"></i> Hemen Faturalandır
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'musteri_paneli:admin_siparis_listesi' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i> Listeye Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

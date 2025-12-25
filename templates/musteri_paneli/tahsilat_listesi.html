@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Ödemelerim{% endblock %}
+{% block page_title %}Ödeme Geçmişi{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Yapılan Ödemeler</h6>
+        <span class="badge bg-success-subtle text-success border border-success px-3">Onaylı Kayıtlar</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="px-4 border-0">Tarih</th>
+                        <th class="border-0">İşlem</th>
+                        <th class="border-0">Açıklama</th>
+                        <th class="text-end px-4 border-0">Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in tahsilatlar %}
+                    <tr>
+                        <td class="px-4 text-muted">{{ h.tarih|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info border border-info">
+                                <i class="bi bi-cash me-1"></i> {{ h.get_hareket_turu_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-muted small">{{ h.aciklama|default:"Sistem Tahsilatı" }}</span>
+                            {% if h.belge_no %}
+                            <br><code class="text-primary small">Dekont: {{ h.belge_no }}</code>
+                            {% endif %}
+                        </td>
+                        <td class="text-end px-4 fw-bold text-success">
+                            {{ h.tutar|floatformat:2 }} ₺
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">Ödeme kaydı bulunamadı</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

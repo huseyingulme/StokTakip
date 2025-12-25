@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Sipariş Oluştur{% endblock %}
+{% block page_title %}Yeni Sipariş Oluştur{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <form method="post">
+            {% csrf_token %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-basket me-2"></i>Ürün Listesi</h6>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i> Siparişi Tamamla
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="px-4 border-0">Ürün Adı</th>
+                                    <th class="border-0">Birim Fiyat</th>
+                                    <th class="border-0 text-center" style="width: 150px;">Miktar</th>
+                                    <th class="border-0 text-end px-4">Stok Durumu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for urun in urunler %}
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="fw-medium text-dark">{{ urun.ad }}</div>
+                                        <small class="text-muted">{{ urun.kategori.ad|default:"Kategorisiz" }}</small>
+                                        <input type="hidden" name="urun_id" value="{{ urun.id }}">
+                                    </td>
+                                    <td>{{ urun.fiyat|floatformat:2 }} ₺</td>
+                                    <td class="text-center">
+                                        <input type="number" name="miktar" value="0" min="0"
+                                            class="form-control form-control-sm text-center mx-auto"
+                                            style="max-width: 80px;">
+                                    </td>
+                                    <td class="text-end px-4">
+                                        <span
+                                            class="badge {% if urun.mevcut_stok > 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                            {{ urun.mevcut_stok }} {{ urun.birim }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">Ürün bulunamadı</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <label class="form-label fw-bold"><i class="bi bi-journal-text me-2"></i>Sipariş Notları</label>
+                    <textarea name="notlar" class="form-control" rows="3"
+                        placeholder="Siparişinizle ilgili iletmek istediğiniz bir not varsa buraya yazabilirsiniz..."></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

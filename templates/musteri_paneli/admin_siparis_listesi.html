@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Sipariş Yönetimi{% endblock %}
+{% block page_title %}Müşteri Siparişleri{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Tüm Siparişler</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="px-4 border-0">Sipariş No</th>
+                        <th class="border-0">Müşteri</th>
+                        <th class="border-0">Tarih</th>
+                        <th class="border-0">Toplam Tutar</th>
+                        <th class="border-0">Durum</th>
+                        <th class="text-end px-4 border-0">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for siparis in siparisler %}
+                    <tr>
+                        <td class="px-4 fw-medium text-primary">{{ siparis.siparis_no }}</td>
+                        <td class="fw-bold">{{ siparis.cari.ad_soyad }}</td>
+                        <td class="text-muted small">{{ siparis.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                        <td class="fw-bold">{{ siparis.toplam_tutar|floatformat:2 }} ₺</td>
+                        <td>
+                            {% if siparis.durum == 'beklemede' %}
+                            <span class="badge bg-warning-subtle text-warning rounded-pill">Onay Bekliyor</span>
+                            {% elif siparis.durum == 'onaylandi' %}
+                            <span class="badge bg-info-subtle text-info rounded-pill">Hazırlanıyor</span>
+                            {% elif siparis.durum == 'faturalandi' %}
+                            <span class="badge bg-success-subtle text-success rounded-pill">Faturalandı</span>
+                            {% elif siparis.durum == 'reddedildi' %}
+                            <span class="badge bg-danger-subtle text-danger rounded-pill">Reddedildi</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">İptal Edildi</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end px-4">
+                            <div class="btn-group">
+                                {% if siparis.durum == 'beklemede' %}
+                                <a href="{% url 'musteri_paneli:admin_siparis_islem' siparis.pk 'onayla' %}"
+                                    class="btn btn-sm btn-outline-success" title="Onayla">
+                                    <i class="bi bi-check-lg"></i>
+                                </a>
+                                {% endif %}
+
+                                {% if siparis.durum == 'beklemede' or siparis.durum == 'onaylandi' %}
+                                <a href="{% url 'musteri_paneli:admin_siparis_islem' siparis.pk 'faturalandir' %}"
+                                    class="btn btn-sm btn-outline-primary" title="Faturalandır">
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                                <a href="{% url 'musteri_paneli:admin_siparis_islem' siparis.pk 'reddet' %}"
+                                    class="btn btn-sm btn-outline-danger" title="Reddet">
+                                    <i class="bi bi-x-lg"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'musteri_paneli:admin_siparis_detay' siparis.pk %}"
+                                    class="btn btn-sm btn-outline-secondary" title="Detay/Düzenle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">Henüz sipariş kaydı bulunmamaktadır</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

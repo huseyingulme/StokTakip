@@ -181,15 +181,6 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between">
-    <a href="{% url 'kullanici_yonetimi:index' %}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Geri Dön
-    </a>
-    <a href="{% url 'kullanici_yonetimi:kullanici_rapor' kullanici.id %}?tarih_baslangic={{ tarih_baslangic }}&tarih_bitis={{ tarih_bitis }}"
-        class="btn btn-primary" target="_blank">
-        <i class="bi bi-file-pdf"></i> Detaylı Rapor
-    </a>
-</div>
 {% endblock %}
 
 {% block extra_head %}

@@ -19,6 +19,7 @@ class Cari(models.Model):
         ('pasif', 'Pasif'),
     ]
 
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cari_account', verbose_name="Kullanıcı Hesabı")
     ad_soyad = models.CharField(max_length=200, verbose_name="Ad Soyad / Firma Adı")
     vergi_dairesi = models.CharField(max_length=100, blank=True, null=True, verbose_name="Vergi Dairesi")
     vergi_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="Vergi Numarası")

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "finans",
     "kullanici_yonetimi",
     "api",
+    "musteri_paneli",
 ]
 
 # drf_spectacular (API documentation) - optional

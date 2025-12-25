@@ -56,7 +56,7 @@ def index(request: Any) -> Any:
         # Normal kullanıcılar sadece kendi performanslarını görebilir
         return redirect('kullanici_yonetimi:kullanici_detay', user_id=request.user.id)
     
-    kullanicilar = User.objects.filter(is_active=True).order_by('username')
+    kullanicilar = User.objects.filter(is_active=True, is_staff=True).order_by('username')
     
     # Tarih filtresi
     tarih_baslangic = request.GET.get('tarih_baslangic', '')
@@ -481,7 +481,7 @@ def kullanici_listesi(request: Any) -> Any:
     Müdür yetkisi gerektirir.
     """
     """Kullanıcı listesi (sadece yönetim için)"""
-    kullanicilar = User.objects.all().order_by('username')
+    kullanicilar = User.objects.filter(is_staff=True).order_by('username')
     
     # Arama
     search_query = request.GET.get('search', '')

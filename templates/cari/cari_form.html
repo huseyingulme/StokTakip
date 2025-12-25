@@ -15,83 +15,138 @@
                     <label class="form-label">{{ form.ad_soyad.label }}</label>
                     {{ form.ad_soyad }}
                     {% if form.ad_soyad.errors %}
-                        <div class="text-danger small">{{ form.ad_soyad.errors }}</div>
+                    <div class="text-danger small">{{ form.ad_soyad.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ form.kategori.label }}</label>
                     {{ form.kategori }}
                     {% if form.kategori.errors %}
-                        <div class="text-danger small">{{ form.kategori.errors }}</div>
+                    <div class="text-danger small">{{ form.kategori.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ form.durum.label }}</label>
                     {{ form.durum }}
                     {% if form.durum.errors %}
-                        <div class="text-danger small">{{ form.durum.errors }}</div>
+                    <div class="text-danger small">{{ form.durum.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">{{ form.tc_vkn.label }}</label>
                     {{ form.tc_vkn }}
                     {% if form.tc_vkn.errors %}
-                        <div class="text-danger small">{{ form.tc_vkn.errors }}</div>
+                    <div class="text-danger small">{{ form.tc_vkn.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">{{ form.vergi_no.label }}</label>
                     {{ form.vergi_no }}
                     {% if form.vergi_no.errors %}
-                        <div class="text-danger small">{{ form.vergi_no.errors }}</div>
+                    <div class="text-danger small">{{ form.vergi_no.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">{{ form.telefon.label }}</label>
                     {{ form.telefon }}
                     {% if form.telefon.errors %}
-                        <div class="text-danger small">{{ form.telefon.errors }}</div>
+                    <div class="text-danger small">{{ form.telefon.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">{{ form.email.label }}</label>
                     {{ form.email }}
                     {% if form.email.errors %}
-                        <div class="text-danger small">{{ form.email.errors }}</div>
+                    <div class="text-danger small">{{ form.email.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ form.sehir.label }}</label>
                     {{ form.sehir }}
                     {% if form.sehir.errors %}
-                        <div class="text-danger small">{{ form.sehir.errors }}</div>
+                    <div class="text-danger small">{{ form.sehir.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ form.risk_limiti.label }}</label>
                     {{ form.risk_limiti }}
                     {% if form.risk_limiti.errors %}
-                        <div class="text-danger small">{{ form.risk_limiti.errors }}</div>
+                    <div class="text-danger small">{{ form.risk_limiti.errors }}</div>
                     {% endif %}
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ form.adres.label }}</label>
                     {{ form.adres }}
                     {% if form.adres.errors %}
-                        <div class="text-danger small">{{ form.adres.errors }}</div>
+                    <div class="text-danger small">{{ form.adres.errors }}</div>
                     {% endif %}
                 </div>
             </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Kaydet
-                </button>
-                <a href="{% url 'cari:index' %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> İptal
-                </a>
+
+            <!-- Kullanıcı Hesabı Oluşturma Bölümü -->
+            {% if not cari.user %}
+            <div class="mt-4 p-3 border rounded bg-light">
+                <h6 class="mb-3 text-primary"><i class="bi bi-person-plus-fill"></i> Müşteri Paneli Erişimi</h6>
+                <div class="form-check mb-3">
+                    {{ form.create_account }}
+                    <label class="form-check-label" for="{{ form.create_account.id_for_label }}">
+                        Bu cari için kullanıcı hesabı oluştur
+                    </label>
+                </div>
+
+                <div id="account-fields" style="display: none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.username.label }}</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.password.label }}</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <div class="text-danger small">{{ form.password.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+            {% else %}
+            <div class="mt-4 p-3 border rounded bg-info-subtle">
+                <h6 class="mb-0 text-info"><i class="bi bi-check-circle-fill me-2"></i>Bu cariye ait bir kullanıcı
+                    hesabı zaten mevcut.</h6>
+            </div>
+            {% endif %}
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const createAccountCheckbox = document.getElementById('{{ form.create_account.id_for_label }}');
+                    const accountFields = document.getElementById('account-fields');
+
+                    function toggleAccountFields() {
+                        if (createAccountCheckbox.checked) {
+                            accountFields.style.display = 'block';
+                        } else {
+                            accountFields.style.display = 'none';
+                        }
+                    }
+
+                    createAccountCheckbox.addEventListener('change', toggleAccountFields);
+                    toggleAccountFields(); // Sayfa yüklendiğinde durumu kontrol et
+                });
+            </script>
     </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Kaydet
+        </button>
+        <a href="{% url 'cari:index' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> İptal
+        </a>
+    </div>
+    </form>
+</div>
 </div>
 {% endblock %}
-

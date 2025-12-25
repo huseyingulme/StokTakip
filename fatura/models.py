@@ -166,12 +166,13 @@ class FaturaKalem(models.Model):
         # KDV oranı yoksa veya 0 ise, varsayılan %20 yap
         if not self.kdv_orani or self.kdv_orani == 0:
             self.kdv_orani = 20
-        self.full_clean()  # clean() metodunu çağır
         ara_toplam = Decimal(str(self.birim_fiyat)) * Decimal(str(self.miktar))
         # 2 ondalık basamağa yuvarla
         ara_toplam = ara_toplam.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         self.kdv_tutari = (ara_toplam * (Decimal(str(self.kdv_orani)) / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         self.toplam_tutar = ara_toplam
+
+        self.full_clean()  # clean() metodunu çağır
         
         if not self.sira_no or self.sira_no == 0:
             max_sira = FaturaKalem.objects.filter(fatura=self.fatura).aggregate(

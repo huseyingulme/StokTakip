@@ -21,6 +21,7 @@
         <h4><i class="bi bi-box-seam"></i> StokTakip</h4>
       </div>
       <ul class="sidebar-menu">
+        {% if user.is_staff %}
         <li>
           <a href="{% url 'raporlar:dashboard' %}" class="menu-item">
             <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
@@ -39,6 +40,11 @@
         <li>
           <a href="{% url 'fatura:index' %}?tip=Satis" class="menu-item">
             <i class="bi bi-cart-check"></i> <span>Satış Faturası</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:admin_siparis_listesi' %}" class="menu-item">
+            <i class="bi bi-cart"></i> <span>Sipariş Yönetimi</span>
           </a>
         </li>
         <li>
@@ -103,13 +109,51 @@
             <i class="bi bi-journal-text"></i> <span>Sistem Kayıtları</span>
           </a>
         </li>
+        {% else %}
+        <!-- Müşteri Menüsü -->
+        <li>
+          <a href="{% url 'musteri_paneli:index' %}" class="menu-item">
+            <i class="bi bi-speedometer2"></i> <span>Müşteri Paneli</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:fatura_listesi' %}" class="menu-item">
+            <i class="bi bi-receipt"></i> <span>Faturalarım</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:ekstre' %}" class="menu-item">
+            <i class="bi bi-file-earmark-text"></i> <span>Hesap Ekstrem</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:tahsilat_listesi' %}" class="menu-item">
+            <i class="bi bi-cash-stack"></i> <span>Ödemelerim</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:siparis_listesi' %}" class="menu-item">
+            <i class="bi bi-cart"></i> <span>Siparişlerim</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:siparis_olustur' %}" class="menu-item">
+            <i class="bi bi-cart-plus"></i> <span>Sipariş Oluştur</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'musteri_paneli:profil' %}" class="menu-item">
+            <i class="bi bi-person-gear"></i> <span>Profilim</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
       <div class="sidebar-footer">
         <div class="user-info">
           <i class="bi bi-person-circle"></i> <span>{{ user.username }}</span>
         </div>
         <div class="d-flex flex-column gap-2">
-          <a href="{% url 'accounts:profile' %}" class="profile-btn">
+          <a href="{% url 'musteri_paneli:profil' %}" class="profile-btn">
             <i class="bi bi-person-gear"></i> Profil
           </a>
           <a href="{% url 'logout' %}" class="logout-btn">
@@ -123,7 +167,7 @@
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="page-title mb-0">{% block page_title %}Ana Sayfa{% endblock %}</h5>
           <div class="d-flex gap-2">
-            <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-primary" title="Profil">
+            <a href="{% url 'musteri_paneli:profil' %}" class="btn btn-sm btn-outline-primary" title="Profil">
               <i class="bi bi-person-circle"></i>
             </a>
             <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger" title="Çıkış">

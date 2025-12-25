@@ -127,8 +127,27 @@
 </div>
 
 
-<!-- Günlük/Haftalık Satışlar -->
+<!-- Sipariş İstatistikleri -->
 <div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <a href="{% url 'musteri_paneli:admin_siparis_listesi' %}?durum=beklemede"
+            class="text-decoration-none h-100 d-block">
+            <div
+                class="stat-card {% if bekleyen_siparis_sayisi > 0 %}stat-warning animated-pulse{% else %}stat-info{% endif %}">
+                <div class="stat-icon">
+                    <i class="bi bi-cart-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ bekleyen_siparis_sayisi }}</h3>
+                    <p>Bekleyen Sipariş</p>
+                </div>
+                {% if bekleyen_siparis_sayisi > 0 %}
+                <div class="stat-badge">YENİ</div>
+                {% endif %}
+            </div>
+        </a>
+    </div>
+
     <div class="col-lg-3 col-md-6">
         <div class="mini-stat-card">
             <div class="mini-stat-icon bg-primary">
@@ -155,18 +174,6 @@
 
     <div class="col-lg-3 col-md-6">
         <div class="mini-stat-card">
-            <div class="mini-stat-icon bg-warning">
-                <i class="bi bi-truck"></i>
-            </div>
-            <div class="mini-stat-content">
-                <h4>{{ tedarikci_sayisi }}</h4>
-                <p>Tedarikçi</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-6">
-        <div class="mini-stat-card">
             <div class="mini-stat-icon bg-secondary">
                 <i class="bi bi-files"></i>
             </div>
@@ -177,6 +184,39 @@
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes pulse-warning {
+        0% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+        }
+    }
+
+    .animated-pulse {
+        animation: pulse-warning 2s infinite;
+    }
+
+    .stat-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 4px;
+        animation: fadeIn 0.5s ease;
+    }
+</style>
 
 <!-- En Çok Satan Ürünler ve Vadesi Yaklaşan Faturalar -->
 <div class="row g-4 mb-4">
@@ -348,6 +388,68 @@
                 {% else %}
                 <p class="text-muted text-center py-3">Henüz fatura oluşturulmamış</p>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Son Siparişler -->
+<div class="row g-4 mt-2 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 text-primary fw-bold"><i class="bi bi-cart"></i> Son Müşteri Siparişleri</h5>
+                <a href="{% url 'musteri_paneli:admin_siparis_listesi' %}"
+                    class="btn btn-sm btn-outline-primary rounded-pill">Tümünü Yönet</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="px-4 border-0">Sipariş No</th>
+                                <th class="border-0">Müşteri</th>
+                                <th class="border-0">Tarih</th>
+                                <th class="border-0">Tutar</th>
+                                <th class="border-0">Durum</th>
+                                <th class="text-end px-4 border-0">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for siparis in son_siparisler %}
+                            <tr>
+                                <td class="px-4 fw-medium text-primary">{{ siparis.siparis_no }}</td>
+                                <td class="fw-bold">{{ siparis.cari.ad_soyad }}</td>
+                                <td class="text-muted small">{{ siparis.olusturma_tarihi|date:"d.m.Y H:i" }}</td>
+                                <td class="fw-bold text-success">{{ siparis.toplam_tutar|floatformat:2 }} ₺</td>
+                                <td>
+                                    {% if siparis.durum == 'beklemede' %}
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill">Onay Bekliyor</span>
+                                    {% elif siparis.durum == 'onaylandi' %}
+                                    <span class="badge bg-info-subtle text-info rounded-pill">İşlemde</span>
+                                    {% elif siparis.durum == 'faturalandi' %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill">Tamamlandı</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{
+                                        siparis.get_durum_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end px-4">
+                                    <a href="{% url 'musteri_paneli:admin_siparis_detay' siparis.pk %}"
+                                        class="btn btn-sm btn-primary rounded-pill px-3">Yönet</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox d-block fs-2 mb-2"></i>
+                                    Henüz sipariş kaydı bulunmamaktadır
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -640,6 +742,5 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Grafikler kaldırıldı
     });
-});
 </script>
 {% endblock %}

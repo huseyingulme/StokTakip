@@ -8,7 +8,7 @@ class CariForm(forms.ModelForm):
     class Meta:
         model = Cari
         fields = ['ad_soyad', 'vergi_dairesi', 'vergi_no', 'tc_vkn', 'telefon', 'email', 
-                  'adres', 'sehir', 'ilce', 'kategori', 'durum', 'risk_limiti']
+                  'adres', 'sehir', 'ilce', 'kategori', 'durum', 'risk_limiti', 'user']
         widgets = {
             'ad_soyad': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ad Soyad / Firma Adı'}),
             'vergi_dairesi': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Vergi Dairesi'}),
@@ -22,6 +22,7 @@ class CariForm(forms.ModelForm):
             'kategori': forms.Select(attrs={'class': 'form-control'}),
             'durum': forms.Select(attrs={'class': 'form-control'}),
             'risk_limiti': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'user': forms.Select(attrs={'class': 'form-control'}),
         }
         labels = {
             'ad_soyad': 'Ad Soyad / Firma Adı',
@@ -36,7 +37,16 @@ class CariForm(forms.ModelForm):
             'kategori': 'Kategori',
             'durum': 'Durum',
             'risk_limiti': 'Risk Limiti (₺)',
+            'user': 'Kullanıcı Hesabı',
         }
+
+    # Kullanıcı oluşturma alanları
+    create_account = forms.BooleanField(required=False, label="Kullanıcı Hesabı Oluştur", initial=False, 
+                                      widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    username = forms.CharField(required=False, label="Kullanıcı Adı", 
+                               widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'kullanıcı_adı'}))
+    password = forms.CharField(required=False, label="Şifre", 
+                               widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '******'}))
     
     def clean(self):
         """Custom validation for CariForm."""

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Case, When, F
 from django.db import models, transaction
+from django.contrib.auth.models import User, Group
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -99,7 +100,32 @@ def cari_ekle(request: Any) -> Any:
                 form = CariForm(request.POST)
                 if form.is_valid():
                     with transaction.atomic():
-                        cari = form.save()
+                        cari = form.save(commit=False)
+                        
+                        # Kullanıcı hesabı oluşturma mantığı
+                        if form.cleaned_data.get('create_account'):
+                            username = form.cleaned_data.get('username')
+                            password = form.cleaned_data.get('password')
+                            
+                            if not username or not password:
+                                messages.error(request, 'Kullanıcı hesabı için kullanıcı adı ve şifre gereklidir.')
+                                return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Yeni Cari Ekle'})
+                            
+                            if User.objects.filter(username=username).exists():
+                                messages.error(request, 'Bu kullanıcı adı zaten kullanılıyor.')
+                                return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Yeni Cari Ekle'})
+                            
+                            # User oluştur
+                            user = User.objects.create_user(username=username, password=password)
+                            
+                            # "Musteri" grubuna ekle (yoksa oluştur)
+                            musteri_grubu, _ = Group.objects.get_or_create(name='Musteri')
+                            user.groups.add(musteri_grubu)
+                            
+                            cari.user = user
+                            messages.success(request, f'"{username}" kullanıcı hesabı başarıyla oluşturuldu.')
+                        
+                        cari.save()
                         
                         log_action(request.user, 'create', cari, 
                                  f'Cari eklendi: {cari.ad_soyad}', request)
@@ -141,12 +167,38 @@ def cari_duzenle(request: Any, pk: int) -> Any:
             try:
                 form = CariForm(request.POST, instance=cari)
                 if form.is_valid():
-                    form.save()
-                    
-                    log_action(request.user, 'update', cari, 
-                             f'Cari güncellendi: {cari.ad_soyad}', request)
-                    messages.success(request, 'Cari başarıyla güncellendi.')
-                    return redirect('cari:detay', pk=pk)
+                    with transaction.atomic():
+                        cari = form.save(commit=False)
+                        
+                        # Kullanıcı hesabı oluşturma mantığı
+                        if form.cleaned_data.get('create_account') and not cari.user:
+                            username = form.cleaned_data.get('username')
+                            password = form.cleaned_data.get('password')
+                            
+                            if not username or not password:
+                                messages.error(request, 'Kullanıcı hesabı için kullanıcı adı ve şifre gereklidir.')
+                                return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Cari Düzenle', 'cari': cari})
+                            
+                            if User.objects.filter(username=username).exists():
+                                messages.error(request, 'Bu kullanıcı adı zaten kullanılıyor.')
+                                return render(request, 'cari/cari_form.html', {'form': form, 'title': 'Cari Düzenle', 'cari': cari})
+                            
+                            # User oluştur
+                            user = User.objects.create_user(username=username, password=password)
+                            
+                            # "Musteri" grubuna ekle
+                            musteri_grubu, _ = Group.objects.get_or_create(name='Musteri')
+                            user.groups.add(musteri_grubu)
+                            
+                            cari.user = user
+                            messages.success(request, f'"{username}" kullanıcı hesabı başarıyla oluşturuldu.')
+                        
+                        cari.save()
+                        
+                        log_action(request.user, 'update', cari, 
+                                 f'Cari güncellendi: {cari.ad_soyad}', request)
+                        messages.success(request, 'Cari başarıyla güncellendi.')
+                        return redirect('cari:index')
                 else:
                     messages.error(request, 'Lütfen form hatalarını düzeltin.')
             except ValidationError as e:
