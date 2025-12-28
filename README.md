@@ -190,41 +190,6 @@ http://127.0.0.1:8000/
 
 Dashboard ve diğer modüllere `raporlar/`, `stok/`, `cari/` vb. URL’ler üzerinden erişebilirsiniz.
 
----
-
-## Geliştirme Ortamı
-
-- **Dil & Framework**: Python, Django, Django REST Framework
-- **Veritabanı**: PostgreSQL
-- **Cache**: Redis (varsa), aksi halde `LocMemCache`
-- **API Dökümantasyonu**: `drf-spectacular` (kuruluysa otomatik entegre olur)
-- **Önbellekleme & Rate Limiting**: Django cache + DRF throttle sınıfları
-
-Geliştirme sırasında tipik akış:
-
-1. İlgili uygulama içinde (`stok/`, `cari/` vb.) model / view / form değişikliklerini yapın.
-2. Gerekirse yeni migrasyon oluşturun:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-3. Şablonları `templates/<uygulama_adı>/` altında güncelleyin.
-4. Gerekirse yeni API endpoint’lerini `api/` uygulamasında tanımlayın.
-
----
-
-## Güvenlik Notları
-
-- Üretim ortamında:
-  - **`DEBUG=False`** olmalı.
-  - **`SECRET_KEY`** mutlaka `.env` içinde tanımlanmalı ve gizli tutulmalı.
-  - **`ALLOWED_HOSTS`** gerçek domain / IP’ler ile doldurulmalı.
-  - HTTPS kullanılıyorsa `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` gibi ayarlar devreye girer.
-- Giriş denemeleri ve hassas istekler özel **RateLimit middleware** ile sınırlandırılır.
-- Şifreler Django’nun yerleşik password validators seti ile güçlendirilmiştir.
-
----
-
 ## E-posta ve Şifre Sıfırlama Akışı
 
 - Uygulama, varsayılan olarak **SMTP üzerinden e-posta** gönderecek şekilde yapılandırılmıştır.

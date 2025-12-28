@@ -49,7 +49,6 @@ class CariForm(forms.ModelForm):
                                widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '******'}))
     
     def clean(self):
-        """Custom validation for CariForm."""
         cleaned_data = super().clean()
         errors = {}
         

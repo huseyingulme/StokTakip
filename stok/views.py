@@ -28,7 +28,6 @@ def index(request: Any) -> Any:
     """
     Stok listesi sayfası.
     
-    Depo yetkisi gerektirir. Filtreleme, arama ve sayfalama desteği ile
     ürün listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
     """
     urun_list = Urun.objects.select_related('kategori').all().order_by('ad')
@@ -77,8 +76,7 @@ def index(request: Any) -> Any:
     paginator = Paginator(urun_list, 20)
     page_number = request.GET.get('page')
     urunler = paginator.get_page(page_number)
-    
-    # Stoksuz ürünler listesi kaldırıldı
+
     
     # Prepare table data in Python
     table_data = prepare_urun_table_data(urunler)
@@ -298,13 +296,7 @@ def stok_duzenle(request: Any, pk: int) -> Any:
     
     Transaction içinde çalışır, hata durumunda rollback yapar.
     Input validation ve error handling ile güvenli hale getirilmiştir.
-    
-    Args:
-        request: HTTP request
-        pk: Ürün ID'si
-    
-    Returns:
-        HTTP response
+
     """
     from django.core.exceptions import ValidationError
     
@@ -352,8 +344,7 @@ def stok_duzenle(request: Any, pk: int) -> Any:
 def stok_hareketleri(request: Any, pk: int) -> Any:
     """
     Stok hareketleri listesi.
-    
-    Depo yetkisi gerektirir. Ürünün stok hareketlerini gösterir.
+
     """
     try:
         urun = get_object_or_404(Urun, pk=pk)

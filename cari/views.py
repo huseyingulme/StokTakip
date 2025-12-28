@@ -33,7 +33,6 @@ def index(request: Any) -> Any:
     """
     Cari listesi sayfası.
     
-    Satış yetkisi gerektirir. Filtreleme, arama ve sayfalama desteği ile
     cari listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
     """
     cari_list = Cari.objects.filter(durum='aktif').select_related().order_by('ad_soyad')
@@ -273,7 +272,6 @@ def cari_detay(request: Any, pk: int) -> Any:
     """
     Cari detay sayfası.
     
-    Satış yetkisi gerektirir. Cari bilgilerini, hareketlerini ve notlarını gösterir.
     Caching ve error handling ile optimize edilmiştir.
     """
     try:
@@ -295,13 +293,6 @@ def cari_detay(request: Any, pk: int) -> Any:
         logger.error(f"Cari detay hatası: {str(e)}", exc_info=True)
         raise
 
-
-@handle_view_errors(
-    error_message="Cari hareketi eklenirken bir hata oluştu.",
-    redirect_url="cari:index"
-)
-@database_transaction
-@login_required
 @handle_view_errors(
     error_message="Cari hareketi eklenirken bir hata oluştu.",
     redirect_url="cari:index"
@@ -630,10 +621,6 @@ def cari_ekstre(request: Any, pk: int) -> Any:
         logger.error(f"Cari ekstre hatası: {str(e)}", exc_info=True)
         raise
 
-
-# PDF export kaldırıldı
-
-
 @handle_view_errors(
     error_message="Not eklenirken bir hata oluştu.",
     redirect_url="cari:index"
@@ -822,7 +809,6 @@ def tahsilat_makbuzu_listesi(request: Any) -> Any:
     """
     Tahsilat makbuzu listesi.
     
-    Muhasebe yetkisi gerektirir. Filtreleme ve sayfalama desteği ile
     tahsilat makbuzu listesini gösterir. Input validation, caching ve error handling ile güvenli hale getirilmiştir.
     """
     try:
@@ -949,7 +935,6 @@ def tediye_makbuzu_listesi(request: Any) -> Any:
     """
     Tediye makbuzu listesi.
     
-    Muhasebe yetkisi gerektirir. Filtreleme ve sayfalama desteği ile
     tediye makbuzu listesini gösterir. Input validation, caching ve error handling ile güvenli hale getirilmiştir.
     """
     try:
@@ -1008,6 +993,3 @@ def tediye_makbuzu_listesi(request: Any) -> Any:
     except Exception as e:
         logger.error(f"Tediye makbuzu listesi hatası: {str(e)}", exc_info=True)
         raise
-
-
-# Yaşlandırma raporu kaldırıldı

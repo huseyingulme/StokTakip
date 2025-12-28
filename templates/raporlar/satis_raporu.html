@@ -23,8 +23,7 @@
                     <select name="cari" class="form-select">
                         <option value="">Tüm Cariler</option>
                         {% for c in cariler %}
-                        <option value="{{ c.pk }}" {% if cari_id == c.pk|stringformat:"s" %}selected{% endif %}>{{
-                            c.ad_soyad }}</option>
+                        <option value="{{ c.pk }}" {% if cari_id == c.pk|stringformat:"s" %}selected{% endif %}>{{c.ad_soyad }}</option>
                         {% endfor %}
                     </select>
                 </div>

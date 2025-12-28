@@ -358,7 +358,6 @@ def alis_raporu(request: Any) -> Any:
     """
     Alış raporu.
     
-    Muhasebe yetkisi gerektirir. Alış faturalarını gösterir.
     Input validation, caching ve error handling ile güvenli hale getirilmiştir.
     """
     try:
@@ -442,7 +441,6 @@ def satis_raporu(request: Any) -> Any:
     """
     Satış raporu.
     
-    Muhasebe yetkisi gerektirir. Satış faturalarını gösterir.
     Input validation, caching ve error handling ile güvenli hale getirilmiştir.
     """
     try:
@@ -517,6 +515,3 @@ def satis_raporu(request: Any) -> Any:
     except Exception as e:
         logger.error(f"Satış raporu hatası: {str(e)}", exc_info=True)
         raise
-
-
-# Excel export fonksiyonları kaldırıldı

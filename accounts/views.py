@@ -15,8 +15,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import LoginView
 from typing import Any
 import logging
-from .utils import log_action
-from .models import AuditLog
 from stoktakip.error_handling import handle_view_errors, database_transaction
 from stoktakip.security_utils import validate_search_query
 from .services.email_service import EmailService
@@ -197,10 +195,10 @@ def profile(request: Any) -> Any:
 def audit_log_list(request: Any) -> Any:
     """Audit log görüntüleme sayfası.
 
-    Admin yetkisi gerektirir. Filtreleme, arama ve sayfalama desteği ile
-    audit log listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
+    Filtreleme, arama ve sayfalama desteği ile audit log listesini gösterir. Input validation ve error handling ile güvenli hale getirilmiştir.
     """
     try:
+        from .models import AuditLog
         log_list = AuditLog.objects.select_related('user', 'content_type').all()
 
         # Arama - Input validation ile

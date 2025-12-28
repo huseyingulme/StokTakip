@@ -1,7 +1,3 @@
-"""
-Error handling ve logging utility fonksiyonları.
-Exception handling, error logging ve user feedback için decorator'lar.
-"""
 import logging
 from functools import wraps
 from typing import Callable, Any, Optional
@@ -20,20 +16,6 @@ def handle_view_errors(
     redirect_url: Optional[str] = None,
     log_error: bool = False 
 ):
-    """
-    View fonksiyonları için error handling decorator'ı.
-    Exception'ları yakalar, loglar ve kullanıcıya mesaj gösterir.
-    
-    Args:
-        error_message: Kullanıcıya gösterilecek hata mesajı
-        redirect_url: Hata durumunda yönlendirilecek URL (None ise aynı sayfada kalır)
-        log_error: Hataları logla (True/False)
-    
-    Usage:
-        @handle_view_errors(error_message="Fatura oluşturulamadı", redirect_url="fatura:index")
-        def fatura_ekle(request):
-            ...
-    """
     def decorator(view_func: Callable) -> Callable:
         @wraps(view_func)
         def wrapper(request: Any, *args: Any, **kwargs: Any) -> Any:

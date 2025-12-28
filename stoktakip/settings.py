@@ -7,12 +7,9 @@ load_dotenv()  # .env yükle
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# Production'da DEBUG=False olmalı, development için .env'de DEBUG=True yapılabilir
 # Development için varsayılan olarak True (production'da mutlaka False yapılmalı!)
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-# SECRET_KEY - Production'da mutlaka environment variable'dan alınmalı
 # Development için fallback key kullanılabilir
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
@@ -51,7 +48,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
-    # local apps
     "accounts",
     "stok",
     "cari",
@@ -60,7 +56,6 @@ INSTALLED_APPS = [
     "masraf",
     "finans",
     "kullanici_yonetimi",
-    "api",
     "musteri_paneli",
 ]
 

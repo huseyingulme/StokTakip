@@ -18,22 +18,9 @@ urlpatterns = [
     path('masraf/', include('masraf.urls')),
     path('finans/', include('finans.urls')),
     path('kullanici-yonetimi/', include('kullanici_yonetimi.urls')),
-    path('api/', include('api.urls')),
     path('musteri-paneli/', include('musteri_paneli.urls')),
     path('', views.home, name='home'),
 ]
-
-# API Documentation (drf-spectacular kullanılırsa)
-try:
-    from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-    urlpatterns += [
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    ]
-except ImportError:
-    # drf-spectacular yoksa API dokümantasyonu kullanılamaz
-    pass
 
 # Handler'ları ekle
 handler404 = views.handler404

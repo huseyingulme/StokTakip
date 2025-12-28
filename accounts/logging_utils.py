@@ -53,4 +53,3 @@ def get_recent_logs(level=None, hours=24, limit=100):
         cache.set(cache_key, logs, 300)  # 5 dakika cache
     
     return logs[:limit]
-

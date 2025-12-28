@@ -79,7 +79,6 @@ class Fatura(models.Model):
         Fatura kaydetme metodu.
         
         NOT: İş mantığı (stok hareketleri, cari hareketleri) servis katmanında yönetilir.
-        Burada sadece temel kaydetme işlemi yapılır.
         """
         is_new = self.pk is None
         

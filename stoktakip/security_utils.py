@@ -1,7 +1,3 @@
-"""
-Güvenlik ve input validation utility fonksiyonları.
-CSRF koruması, input sanitization ve XSS koruması için helper'lar.
-"""
 import re
 from typing import Any, Optional
 from django.core.exceptions import ValidationError
@@ -10,16 +6,6 @@ from django.core.exceptions import ValidationError
 def sanitize_string(value: str, max_length: Optional[int] = None) -> str:
     """
     String input'u sanitize eder ve güvenli hale getirir.
-    
-    Args:
-        value: Temizlenecek string değer
-        max_length: Maksimum uzunluk (None ise sınır yok)
-    
-    Returns:
-        Temizlenmiş string
-    
-    Raises:
-        ValidationError: Geçersiz input durumunda
     """
     if not isinstance(value, str):
         raise ValidationError("Input must be a string")
@@ -39,20 +25,6 @@ def sanitize_string(value: str, max_length: Optional[int] = None) -> str:
 
 def sanitize_integer(value: Any, min_value: Optional[int] = None, 
                      max_value: Optional[int] = None) -> int:
-    """
-    Integer input'u validate ve sanitize eder.
-    
-    Args:
-        value: Dönüştürülecek değer
-        min_value: Minimum değer
-        max_value: Maksimum değer
-    
-    Returns:
-        Validated integer
-    
-    Raises:
-        ValidationError: Geçersiz input durumunda
-    """
     try:
         int_value = int(value)
     except (ValueError, TypeError):
@@ -69,20 +41,6 @@ def sanitize_integer(value: Any, min_value: Optional[int] = None,
 
 def sanitize_decimal(value: Any, min_value: Optional[float] = None,
                      max_value: Optional[float] = None) -> float:
-    """
-    Decimal/Float input'u validate ve sanitize eder.
-    
-    Args:
-        value: Dönüştürülecek değer
-        min_value: Minimum değer
-        max_value: Maksimum değer
-    
-    Returns:
-        Validated float
-    
-    Raises:
-        ValidationError: Geçersiz input durumunda
-    """
     try:
         float_value = float(value)
     except (ValueError, TypeError):
@@ -98,19 +56,7 @@ def sanitize_decimal(value: Any, min_value: Optional[float] = None,
 
 
 def validate_date_range(start_date: str, end_date: str) -> tuple[str, str]:
-    """
-    Tarih aralığını validate eder.
-    
-    Args:
-        start_date: Başlangıç tarihi (YYYY-MM-DD formatında)
-        end_date: Bitiş tarihi (YYYY-MM-DD formatında)
-    
-    Returns:
-        (start_date, end_date) tuple
-    
-    Raises:
-        ValidationError: Geçersiz tarih veya aralık durumunda
-    """
+
     from datetime import datetime
     
     try:
@@ -131,19 +77,7 @@ def validate_date_range(start_date: str, end_date: str) -> tuple[str, str]:
 
 
 def validate_search_query(query: str, max_length: int = 100) -> str:
-    """
-    Arama sorgusunu validate eder.
-    
-    Args:
-        query: Arama sorgusu
-        max_length: Maksimum uzunluk
-    
-    Returns:
-        Validated arama sorgusu
-    
-    Raises:
-        ValidationError: Geçersiz sorgu durumunda
-    """
+
     if not query:
         return ""
     
