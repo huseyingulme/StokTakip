@@ -5,7 +5,6 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    # Kayıt özelliği kapatıldı: URL tamamen devre dışı bırakıldı
     # path('register/', views.register, name='register'),
 
     path('profile/', views.profile, name='profile'),
